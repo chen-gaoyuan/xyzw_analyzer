@@ -198,7 +198,7 @@ func (r *DataReader) ReadUTFBytes(length int) (string, error) {
 	return result, nil
 }
 
-// 优化: 添加批量读取方法
+// ReadBytes 优化: 添加批量读取方法
 func (r *DataReader) ReadBytes(size int) ([]byte, error) {
 	if !r.Validate(size) {
 		return nil, errors.New("read eof")

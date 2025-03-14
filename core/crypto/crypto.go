@@ -14,7 +14,7 @@ func init() {
 	rand.Seed(time.Now().UnixNano() ^ int64(rand.Uint64()))
 }
 
-// 压缩与解压缩
+// CompressLZ4 压缩与解压缩
 func CompressLZ4(data []byte) []byte {
 	if len(data) == 0 {
 		return []byte{}
@@ -44,7 +44,7 @@ func DecompressLZ4(data []byte) []byte {
 	return r2
 }
 
-// 统一加密接口
+// Encrypt 统一加密接口
 func Encrypt(data []byte, method string, key ...byte) []byte {
 	switch method {
 	case "LX":
@@ -56,7 +56,7 @@ func Encrypt(data []byte, method string, key ...byte) []byte {
 	}
 }
 
-// 统一解密接口
+// Decrypt 统一解密接口
 func Decrypt(data []byte, method string) []byte {
 	switch method {
 	case "LX":
@@ -68,7 +68,7 @@ func Decrypt(data []byte, method string) []byte {
 	}
 }
 
-// 优化: 添加错误处理和边界检查
+// EncryptLX 优化: 添加错误处理和边界检查
 func EncryptLX(data []byte) []byte {
 	if len(data) == 0 {
 		return []byte{}
@@ -105,15 +105,14 @@ func DecryptLX(data []byte) []byte {
 	}
 
 	// 从头部字节中提取密钥
-	key := byte(
-		((data[2] >> 6 & 1) << 7) |
-			((data[2] >> 4 & 1) << 6) |
-			((data[2] >> 2 & 1) << 5) |
-			((data[2] >> 0 & 1) << 4) |
-			((data[3] >> 6 & 1) << 3) |
-			((data[3] >> 4 & 1) << 2) |
-			((data[3] >> 2 & 1) << 1) |
-			((data[3] >> 0 & 1) << 0))
+	key := ((data[2] >> 6 & 1) << 7) |
+		((data[2] >> 4 & 1) << 6) |
+		((data[2] >> 2 & 1) << 5) |
+		((data[2] >> 0 & 1) << 4) |
+		((data[3] >> 6 & 1) << 3) |
+		((data[3] >> 4 & 1) << 2) |
+		((data[3] >> 2 & 1) << 1) |
+		((data[3] >> 0 & 1) << 0)
 
 	// 对前100个字节进行异或解密
 	n := min(len(data), 100)
