@@ -15,14 +15,138 @@ type BonEncoder struct {
 func NewBonEncoder() *BonEncoder {
 	return &BonEncoder{
 		dw:     NewDataWriter(),
-		strMap: make(map[string]int),
+		strMap: make(map[string]int, 64), // 预分配更合理的容量
 	}
 }
 
 // Reset 重置编码器状态
 func (e *BonEncoder) Reset() {
 	e.dw.Reset()
-	e.strMap = make(map[string]int)
+	e.strMap = make(map[string]int, 64)
+}
+
+// 优化: 合并数字类型编码逻辑
+func (e *BonEncoder) EncodeNumber(val interface{}) error {
+	switch v := val.(type) {
+	case int:
+		if v >= -2147483648 && v <= 2147483647 {
+			return e.EncodeInt(v)
+		}
+		return e.EncodeLong(int64(v))
+	case int8, int16, int32, uint8, uint16:
+		return e.EncodeInt(int(reflect.ValueOf(v).Int()))
+	case int64, uint, uint32, uint64:
+		return e.EncodeLong(reflect.ValueOf(v).Int())
+	case float32:
+		return e.EncodeFloat(v)
+	case float64:
+		// 检查是否可以表示为更小的类型
+		intVal := int64(v)
+		if float64(intVal) == v {
+			if intVal >= -2147483648 && intVal <= 2147483647 {
+				return e.EncodeInt(int(intVal))
+			}
+			return e.EncodeLong(intVal)
+		}
+		if float64(float32(v)) == v {
+			return e.EncodeFloat(float32(v))
+		}
+		return e.EncodeDouble(v)
+	default:
+		return e.EncodeDouble(reflect.ValueOf(v).Float())
+	}
+}
+
+// Encode 编码任意类型的值
+func (e *BonEncoder) Encode(val interface{}) error {
+	if val == nil {
+		return e.EncodeNull()
+	}
+
+	// 使用反射优化类型判断
+	v := reflect.ValueOf(val)
+	switch v.Kind() {
+	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64,
+		reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64,
+		reflect.Float32, reflect.Float64:
+		return e.EncodeNumber(val)
+	case reflect.Bool:
+		return e.EncodeBoolean(v.Bool())
+	case reflect.String:
+		return e.EncodeString(v.String())
+	case reflect.Slice:
+		if v.Type().Elem().Kind() == reflect.Uint8 {
+			// []byte 类型
+			return e.EncodeBinary(v.Bytes())
+		}
+		// 其他切片类型
+		length := v.Len()
+		e.dw.WriteInt8(9)
+		e.dw.Write7BitInt(length)
+		for i := 0; i < length; i++ {
+			if err := e.Encode(v.Index(i).Interface()); err != nil {
+				return err
+			}
+		}
+		return nil
+	case reflect.Map:
+		e.dw.WriteInt8(8)
+		e.dw.Write7BitInt(v.Len())
+		for _, key := range v.MapKeys() {
+			if err := e.Encode(key.Interface()); err != nil {
+				return err
+			}
+			if err := e.Encode(v.MapIndex(key).Interface()); err != nil {
+				return err
+			}
+		}
+		return nil
+	case reflect.Struct:
+		// 特殊处理已知类型
+		if t, ok := val.(time.Time); ok {
+			return e.EncodeDateTime(t)
+		}
+		if t, ok := val.(Int64); ok {
+			return e.EncodeLong(t)
+		}
+		// 将结构体转换为map
+		return e.encodeStruct(v)
+	default:
+		return e.EncodeNull()
+	}
+}
+
+// 新增: 结构体编码方法
+func (e *BonEncoder) encodeStruct(v reflect.Value) error {
+	t := v.Type()
+	fields := make(map[string]interface{})
+
+	for i := 0; i < t.NumField(); i++ {
+		field := t.Field(i)
+		// 跳过非导出字段
+		if field.PkgPath != "" {
+			continue
+		}
+		// 获取json标签或使用字段名
+		name := field.Name
+		if tag, ok := field.Tag.Lookup("json"); ok && tag != "-" {
+			name = tag
+		}
+		fields[name] = v.Field(i).Interface()
+	}
+
+	// 编码为map
+	e.dw.WriteInt8(8)
+	e.dw.Write7BitInt(len(fields))
+	for k, v := range fields {
+		if err := e.Encode(k); err != nil {
+			return err
+		}
+		if err := e.Encode(v); err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 // EncodeInt 编码整数
@@ -62,29 +186,6 @@ func (e *BonEncoder) EncodeDouble(val float64) error {
 	e.dw.WriteInt8(4)
 	e.dw.WriteFloat64(val)
 	return nil
-}
-
-// EncodeNumber 根据数值类型自动选择编码方式
-func (e *BonEncoder) EncodeNumber(val float64) error {
-	intVal := int(val)
-
-	// 检查是否为整数
-	if float64(intVal) == val {
-		// 检查是否为32位整数范围
-		if intVal == int(int32(intVal)) {
-			return e.EncodeInt(intVal)
-		}
-		// 否则编码为长整数
-		return e.EncodeLong(int64(val))
-	}
-
-	// 检查是否为浮点数
-	if float64(float32(val)) == val {
-		return e.EncodeFloat(float32(val))
-	}
-
-	// 否则编码为双精度浮点数
-	return e.EncodeDouble(val)
 }
 
 // EncodeString 编码字符串
@@ -210,96 +311,6 @@ func (e *BonEncoder) EncodeObject(val interface{}) error {
 	}
 
 	return nil
-}
-
-// Encode 根据值的类型自动选择编码方式
-func (e *BonEncoder) Encode(val interface{}) error {
-	if val == nil {
-		return e.EncodeNull()
-	}
-
-	switch v := val.(type) {
-	case int:
-		return e.EncodeInt(v)
-	case int8:
-		return e.EncodeInt(int(v))
-	case int16:
-		return e.EncodeInt(int(v))
-	case int32:
-		return e.EncodeInt(int(v))
-	case int64:
-		return e.EncodeLong(v)
-	case uint:
-		return e.EncodeLong(int64(v))
-	case uint8:
-		return e.EncodeInt(int(v))
-	case uint16:
-		return e.EncodeInt(int(v))
-	case uint32:
-		return e.EncodeLong(int64(v))
-	case uint64:
-		return e.EncodeLong(int64(v))
-	case float32:
-		return e.EncodeFloat(v)
-	case float64:
-		return e.EncodeDouble(v)
-	case bool:
-		return e.EncodeBoolean(v)
-	case string:
-		return e.EncodeString(v)
-	case Int64:
-		return e.EncodeLong(v)
-	case []byte:
-		return e.EncodeBinary(v)
-	case []interface{}:
-		return e.EncodeArray(v)
-	case map[string]interface{}:
-		return e.EncodeMap(v)
-	case time.Time:
-		return e.EncodeDateTime(v)
-	default:
-		// 处理其他类型
-		rv := reflect.ValueOf(val)
-
-		// 处理数组和切片
-		if rv.Kind() == reflect.Array || rv.Kind() == reflect.Slice {
-			if rv.Type().Elem().Kind() == reflect.Uint8 {
-				// []byte类型
-				bytes := make([]byte, rv.Len())
-				for i := 0; i < rv.Len(); i++ {
-					bytes[i] = byte(rv.Index(i).Uint())
-				}
-				return e.EncodeBinary(bytes)
-			}
-
-			// 其他数组类型
-			array := make([]interface{}, rv.Len())
-			for i := 0; i < rv.Len(); i++ {
-				array[i] = rv.Index(i).Interface()
-			}
-			return e.EncodeArray(array)
-		}
-
-		// 处理Map
-		if rv.Kind() == reflect.Map {
-			if rv.Type().Key().Kind() == reflect.String {
-				mapVal := make(map[string]interface{}, rv.Len())
-				iter := rv.MapRange()
-				for iter.Next() {
-					mapVal[iter.Key().String()] = iter.Value().Interface()
-				}
-				return e.EncodeMap(mapVal)
-			}
-		}
-
-		// 处理结构体
-		if rv.Kind() == reflect.Struct {
-			return e.EncodeObject(val)
-		}
-
-		// 默认处理为null
-		return e.EncodeNull()
-	}
 }
 
 // GetBytes 获取编码后的字节数据

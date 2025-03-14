@@ -4,11 +4,10 @@ import (
 	"bytes"
 	"encoding/binary"
 	"errors"
-	"fmt"
 	"math"
 )
 
-// DataReader 实现类似JavaScript中的二进制数据读取器
+// DataReader 实现二进制数据读取器
 type DataReader struct {
 	data     []byte
 	position int
@@ -34,7 +33,6 @@ func (r *DataReader) Reset(data []byte) {
 // Validate 验证是否有足够的数据可读
 func (r *DataReader) Validate(size int) bool {
 	if r.position+size > len(r.data) {
-		fmt.Println("read eof")
 		return false
 	}
 	return true
@@ -197,5 +195,16 @@ func (r *DataReader) ReadUTFBytes(length int) (string, error) {
 
 	result := string(r.data[r.position : r.position+length])
 	r.position += length
+	return result, nil
+}
+
+// 优化: 添加批量读取方法
+func (r *DataReader) ReadBytes(size int) ([]byte, error) {
+	if !r.Validate(size) {
+		return nil, errors.New("read eof")
+	}
+
+	result := r.data[r.position : r.position+size]
+	r.position += size
 	return result, nil
 }

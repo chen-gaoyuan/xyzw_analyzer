@@ -2,7 +2,6 @@ package crypto
 
 import (
 	"bytes"
-	"fmt"
 	"github.com/pierrec/lz4"
 	"io"
 	"log"
@@ -10,12 +9,12 @@ import (
 	"time"
 )
 
-// 初始化随机数生成器
 func init() {
-	rand.Seed(time.Now().UnixNano())
+	// 使用更安全的随机数种子
+	rand.Seed(time.Now().UnixNano() ^ int64(rand.Uint64()))
 }
 
-// CompressLZ4 使用LZ4算法压缩数据
+// 压缩与解压缩
 func CompressLZ4(data []byte) []byte {
 	if len(data) == 0 {
 		return []byte{}
@@ -23,32 +22,58 @@ func CompressLZ4(data []byte) []byte {
 
 	var compressedData bytes.Buffer
 	encoder := lz4.NewWriter(&compressedData)
-	_, err := encoder.Write(data)
-	if err != nil {
-		log.Fatalf("压缩数据失败: %v", err)
+	if _, err := encoder.Write(data); err != nil {
+		log.Printf("压缩数据失败: %v", err)
+		return data // 失败时返回原始数据
 	}
 	encoder.Close()
 	return compressedData.Bytes()
 }
 
-// DecompressLZ4 使用LZ4算法解压缩数据
-func DecompressLZ4(data []byte, originalSize int) []byte {
+func DecompressLZ4(data []byte) []byte {
 	if len(data) == 0 {
 		return []byte{}
 	}
+
 	r := lz4.NewReader(bytes.NewReader(data))
-	// 将解压后的数据复制到 decompressed
 	r2, err := io.ReadAll(r)
 	if err != nil {
-		fmt.Println("Error decompressing data:", err)
-		return nil
+		log.Printf("解压数据失败: %v", err)
+		return data // 失败时返回原始数据
 	}
 	return r2
 }
 
-// EncryptLX 实现"lx"加密算法
-// 对应JavaScript中的E函数
+// 统一加密接口
+func Encrypt(data []byte, method string, key ...byte) []byte {
+	switch method {
+	case "LX":
+		return EncryptLX(data)
+	case "X":
+		return EncryptX(data)
+	default:
+		return data
+	}
+}
+
+// 统一解密接口
+func Decrypt(data []byte, method string) []byte {
+	switch method {
+	case "LX":
+		return DecryptLX(data)
+	case "X":
+		return DecryptX(data)
+	default:
+		return data
+	}
+}
+
+// 优化: 添加错误处理和边界检查
 func EncryptLX(data []byte) []byte {
+	if len(data) == 0 {
+		return []byte{}
+	}
+
 	// 首先压缩数据
 	compressed := CompressLZ4(data)
 
@@ -61,23 +86,12 @@ func EncryptLX(data []byte) []byte {
 		compressed[i] ^= key
 	}
 
-	// 设置特定的头部字节
+	// 设置标记字节
 	if len(compressed) >= 4 {
-		compressed[0] = 112 // 'p'
-		compressed[1] = 108 // 'l'
-
-		// 将密钥信息嵌入到头部字节中
-		compressed[2] = 170&compressed[2] |
-			((key >> 7 & 1) << 6) |
-			((key >> 6 & 1) << 4) |
-			((key >> 5 & 1) << 2) |
-			((key >> 4 & 1) << 0)
-
-		compressed[3] = 170&compressed[3] |
-			((key >> 3 & 1) << 6) |
-			((key >> 2 & 1) << 4) |
-			((key >> 1 & 1) << 2) |
-			((key >> 0 & 1) << 0)
+		compressed[0] = 112
+		compressed[1] = 108
+		compressed[2] = 170&compressed[2] | (key>>7&1)<<6 | (key>>6&1)<<4 | (key>>5&1)<<2 | (key>>4&1)<<0
+		compressed[3] = 170&compressed[3] | (key>>3&1)<<6 | (key>>2&1)<<4 | (key>>1&1)<<2 | (key>>0&1)<<0
 	}
 
 	return compressed
@@ -114,7 +128,7 @@ func DecryptLX(data []byte) []byte {
 	data[3] = 24
 
 	// 解压缩数据
-	return DecompressLZ4(data, 0)
+	return DecompressLZ4(data)
 }
 
 // EncryptX 实现"x"加密算法

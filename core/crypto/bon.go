@@ -10,16 +10,8 @@ var (
 	globalEncoder = NewBonEncoder()
 )
 
-type XYMsg struct {
-	Ack  int
-	Body any
-	Cmd  string
-	Seq  int
-	Time int64
-}
-
 // Decode 解码二进制数据为Go对象
-func Decode(data []byte) (interface{}, error) {
+func _Decode(data []byte) (interface{}, error) {
 	if data == nil || len(data) == 0 {
 		return nil, errors.New("empty data")
 	}
@@ -29,7 +21,7 @@ func Decode(data []byte) (interface{}, error) {
 }
 
 // Encode 将Go对象编码为二进制数据
-func Encode(value interface{}, copy bool) ([]byte, error) {
+func _Encode(value interface{}, copy bool) ([]byte, error) {
 	globalEncoder.Reset()
 	if err := globalEncoder.Encode(value); err != nil {
 		return nil, err
@@ -37,55 +29,70 @@ func Encode(value interface{}, copy bool) ([]byte, error) {
 	return globalEncoder.GetBytes(copy), nil
 }
 
-// EncodeAndEncryptLX 编码并使用LX算法加密
-func EncodeAndEncryptLX(value interface{}) ([]byte, error) {
-	data, err := Encode(value, true)
-	if err != nil {
-		return nil, err
-	}
-	return EncryptLX(data), nil
-}
-
-// DecryptLXAndDecode 使用LX算法解密并解码
-func DecryptLXAndDecode(data []byte) (interface{}, error) {
-	if data == nil || len(data) == 0 {
-		return nil, errors.New("empty data")
-	}
-
-	decrypted := DecryptLX(data)
-	return Decode(decrypted)
-}
-
-// EncodeAndEncryptX 编码并使用X算法加密
-func EncodeAndEncryptX(value interface{}) ([]byte, error) {
-	data, err := Encode(value, true)
-	if err != nil {
-		return nil, err
-	}
-	return EncryptX(data), nil
-}
-
-// DecryptXAndDecode 使用X算法解密并解码
-func DecryptXAndDecode(data []byte) (interface{}, error) {
-	if data == nil || len(data) == 0 {
-		return nil, errors.New("empty data")
-	}
-
-	decrypted := DecryptX(data)
-	return Decode(decrypted)
-}
-
-// 提供一些辅助函数，方便使用
+// EncodeToBytes 简化版的Encode，总是返回复制的字节数组
 func EncodeToBytes(value interface{}) []byte {
-	data, err := Encode(value, true)
+	data, err := _Encode(value, true)
 	if err != nil {
 		return nil
 	}
 	return data
 }
 
+// EncodeAndEncrypt 统一加密解密接口
+func EncodeAndEncrypt(value interface{}, method string) ([]byte, error) {
+	data, err := _Encode(value, true)
+	if err != nil {
+		return nil, err
+	}
+
+	switch method {
+	case "LX":
+		return EncryptLX(data), nil
+	case "X":
+		return EncryptX(data), nil
+	default:
+		return data, nil
+	}
+}
+
+// DecryptAndDecode 统一解密解码接口
+func DecryptAndDecode(data []byte, method string) (interface{}, error) {
+	if data == nil || len(data) == 0 {
+		return nil, errors.New("empty data")
+	}
+
+	var decrypted []byte
+	switch method {
+	case "LX":
+		decrypted = DecryptLX(data)
+	case "X":
+		decrypted = DecryptX(data)
+	default:
+		decrypted = data
+	}
+
+	return _Decode(decrypted)
+}
+
+// EncodeAndEncryptLX 为了兼容性保留的原始函数
+func EncodeAndEncryptLX(value interface{}) ([]byte, error) {
+	return EncodeAndEncrypt(value, "LX")
+}
+
+func DecryptLXAndDecode(data []byte) (interface{}, error) {
+	return DecryptAndDecode(data, "LX")
+}
+
+func EncodeAndEncryptX(value interface{}) ([]byte, error) {
+	return EncodeAndEncrypt(value, "X")
+}
+
+func DecryptXAndDecode(data []byte) (interface{}, error) {
+	return DecryptAndDecode(data, "X")
+}
+
 func DecodeFromBytes(data []byte) interface{} {
-	result, err := Decode(data)
+	result, err := _Decode(data)
 	if err != nil {
 		return nil
 	}
