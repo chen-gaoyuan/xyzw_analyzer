@@ -1,126 +1,196 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>咸鱼之王辅助分析</title>
-  <!-- 引入Vue 3 -->
-  <script src="https://cdn.jsdelivr.net/npm/vue@3.3.4/dist/vue.global.prod.js"></script>
-  <!-- 引入Element Plus -->
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/element-plus@2.3.8/dist/index.css" />
-  <script src="https://cdn.jsdelivr.net/npm/element-plus@2.3.8/dist/index.full.min.js"></script>
-  <!-- 引入Element Plus图标 -->
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@element-plus/icons-vue@2.1.0/dist/index.css" />
-  <script src="https://cdn.jsdelivr.net/npm/@element-plus/icons-vue@2.1.0/dist/index.iife.min.js"></script>
-  <!-- 自定义样式 -->
-  <link rel="stylesheet" href="styles.css">
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>咸鱼之王辅助分析</title>
+    <!-- 引入Vue 3 -->
+    <script src="https://cdn.jsdelivr.net/npm/vue@3.3.4/dist/vue.global.prod.js"></script>
+    <!-- 引入Element Plus -->
+    <link
+            rel="stylesheet"
+            href="//cdn.jsdelivr.net/npm/element-plus/dist/index.css"
+    />
+    <script src="//cdn.jsdelivr.net/npm/element-plus"></script>
+    <script src="//cdn.jsdelivr.net/npm/@element-plus/icons-vue"></script>
+
+
+    <!-- 自定义样式 -->
+    <link rel="stylesheet" href="styles.css">
 </head>
 <body>
 <div id="app">
-  <el-container class="main-container">
-    <!-- 头部 -->
-    <el-header height="auto" class="app-header">
-      <div class="header-content">
-        <h1 class="app-title">咸鱼之王辅助分析</h1>
-        <div class="connection-status">
-          <el-tag :type="connectionStatusType" size="small" effect="dark">
-            <el-icon v-if="isConnected"><Check /></el-icon>
-            <el-icon v-else-if="connectionError"><WarningFilled /></el-icon>
-            <el-icon v-else><Close /></el-icon>
-            {{ connectionStatusText }}
-          </el-tag>
-          <el-button-group class="control-buttons">
-            <el-button type="primary" size="small" @click="reconnect" :loading="connecting">
-              <el-icon><Refresh /></el-icon> 重新连接
-            </el-button>
-            <el-button type="danger" size="small" @click="clearMessages">
-              <el-icon><Delete /></el-icon> 清空消息
-            </el-button>
-          </el-button-group>
-        </div>
-      </div>
-    </el-header>
-
-    <!-- 主体内容 -->
-    <el-container class="content-container">
-      <!-- 左侧消息列表 -->
-      <el-aside width="40%" class="message-container">
-        <div class="filter-container">
-          <el-form :inline="true" size="small">
-            <el-form-item label="方向">
-              <el-select v-model="filterDirection" placeholder="消息方向">
-                <el-option label="全部" value="all"></el-option>
-                <el-option label="发送" value="client"></el-option>
-                <el-option label="接收" value="server"></el-option>
-              </el-select>
-            </el-form-item>
-            <el-form-item label="命令">
-              <el-input v-model="filterCmd" placeholder="命令名称"></el-input>
-            </el-form-item>
-            <el-form-item label="关键词">
-              <el-input v-model="filterKeyword" placeholder="搜索关键词"></el-input>
-            </el-form-item>
-            <el-form-item>
-              <el-button type="primary" @click="resetFilters">
-                <el-icon><Refresh /></el-icon> 重置
-              </el-button>
-            </el-form-item>
-          </el-form>
-        </div>
-        <el-scrollbar height="calc(100% - 70px)">
-          <div class="message-list">
-            <el-empty v-if="filteredMessages.length === 0" description="暂无消息"></el-empty>
-            <div
-                    v-for="(message, index) in filteredMessages"
-                    :key="index"
-                    class="message-item"
-                    :class="{ 'is-expanded': message.expanded }"
-                    @click="toggleExpand(message)"
-            >
-              <div class="message-header">
-                <div :class="['message-direction', message.call === 'client' ? 'send' : 'receive']">
-                  {{ getCurrentTime(message.timestamp) }}
-                  {{ message.call === 'client' ? 'Send:' : 'Receive:' }}
-                  {{ message.parsedMsg.cmd }}
+    <el-container class="main-container">
+        <!-- 头部 -->
+        <el-header height="auto" class="app-header">
+            <div class="header-content">
+                <h1 class="app-title">咸鱼之王辅助分析</h1>
+                <div class="connection-status">
+                    <el-tag :type="connectionStatusType" size="small" effect="dark">
+                        <el-icon v-if="isConnected">
+                            <Check/>
+                        </el-icon>
+                        <el-icon v-else-if="connectionError">
+                            <WarningFilled/>
+                        </el-icon>
+                        <el-icon v-else>
+                            <Close/>
+                        </el-icon>
+                        {{ connectionStatusText }}
+                    </el-tag>
+                    <el-button-group class="control-buttons">
+                        <el-button type="primary" size="small" @click="reconnect" :loading="connecting">
+                            <el-icon>
+                                <Refresh/>
+                            </el-icon>
+                            重新连接
+                        </el-button>
+                        <el-button type="danger" size="small" @click="clearMessages">
+                            <el-icon>
+                                <Delete/>
+                            </el-icon>
+                            清空消息
+                        </el-button>
+                    </el-button-group>
                 </div>
-                <el-button
-                        type="primary"
-                        size="small"
-                        text
-                        @click.stop="viewMessageDetail(message)"
-                >
-                  {{ message.call === 'client' ? '调试' : '查看' }}
-                </el-button>
-              </div>
-              <div v-show="message.expanded" class="message-content">
-                <pre>{{ formatJson(message.parsedMsg) }}</pre>
-              </div>
             </div>
-          </div>
-        </el-scrollbar>
-      </el-aside>
+        </el-header>
 
-      <!-- 右侧JSON详情 -->
-      <el-main class="json-detail">
-        <div class="json-header">
-          <span class="json-title">JSON 数据</span>
-          <el-button
-                  type="primary"
-                  size="small"
-                  text
-                  :disabled="!currentJson"
-                  @click="copyJson"
-          >
-            <el-icon><DocumentCopy /></el-icon> 复制
-          </el-button>
-        </div>
-        <el-scrollbar height="calc(100% - 40px)" class="json-content">
-          <pre v-if="currentJson">{{ currentJson }}</pre>
-          <el-empty v-else description="选择消息查看详情"></el-empty>
-        </el-scrollbar>
-      </el-main>
+        <!-- 主体内容 -->
+        <el-container class="content-container">
+            <!-- 左侧消息列表 -->
+            <el-aside width="40%" class="message-container">
+                <div class="filter-container">
+                    <el-form :inline="true" size="small">
+                        <el-form-item label="方向">
+                            <el-select v-model="filterDirection" placeholder="消息方向">
+                                <el-option label="全部" value="all"></el-option>
+                                <el-option label="发送" value="client"></el-option>
+                                <el-option label="接收" value="server"></el-option>
+                            </el-select>
+                        </el-form-item>
+                        <el-form-item label="命令">
+                            <el-input v-model="filterCmd" placeholder="命令名称"></el-input>
+                        </el-form-item>
+                        <el-form-item label="关键词">
+                            <el-input v-model="filterKeyword" placeholder="搜索关键词"></el-input>
+                        </el-form-item>
+                        <el-form-item>
+                            <el-button type="primary" @click="resetFilters">
+                                <el-icon>
+                                    <Refresh/>
+                                </el-icon>
+                                重置
+                            </el-button>
+                        </el-form-item>
+                    </el-form>
+                </div>
+                <el-scrollbar height="calc(100% - 70px)">
+                    <div class="message-list">
+                        <el-empty v-if="filteredMessages.length === 0" description="暂无消息"></el-empty>
+                        <div
+                                v-for="(message, index) in filteredMessages"
+                                :key="index"
+                                class="message-item"
+                                :class="{ 'is-expanded': message.expanded }"
+                                @click="toggleExpand(message)"
+                        >
+
+                            <!-- 修改消息头部，直接显示备注内容 -->
+                            <div class="message-header">
+                                <div :class="['message-direction', message.call === 'client' ? 'send' : 'receive']">
+                                    {{ getCurrentTime(message.timestamp) }}
+                                    {{ message.call === 'client' ? 'Send:' : 'Receive:' }}
+                                    <span class="cmd-text">{{ message.parsedMsg.cmd }}</span>
+                                    <span v-if="hasCommandNote(message.parsedMsg.cmd)" class="note-tag" @click.stop="openCommandNoteDialog(message)">
+            <el-tooltip :content="'点击编辑备注'" placement="top">
+                <span class="note-content">{{ getCommandNote(message.parsedMsg.cmd) }}</span>
+            </el-tooltip>
+        </span>
+                                    <span v-else class="add-note-btn" @click.stop="openCommandNoteDialog(message)">
+            <el-tooltip content="添加命令备注" placement="top">
+                <el-icon><Edit/></el-icon>
+            </el-tooltip>
+        </span>
+                                </div>
+                                <div class="message-actions">
+                                    <el-button
+                                            type="primary"
+                                            size="small"
+                                            text
+                                            @click.stop="viewMessageDetail(message)"
+                                    >
+                                        {{ message.call === 'client' ? '调试' : '查看' }}
+                                    </el-button>
+                                </div>
+                            </div>
+
+                            <!-- 在消息内容中添加键备注功能 -->
+                            <div v-show="message.expanded" class="message-content">
+                                <pre>{{ formatJson(message.parsedMsg) }}</pre>
+                            </div>
+
+
+                        </div>
+                    </div>
+                </el-scrollbar>
+            </el-aside>
+
+
+            <!-- 右侧JSON详情 -->
+            <el-main class="json-detail">
+                <div class="json-header">
+                    <span class="json-title">JSON 数据</span>
+                    <div class="json-actions">
+                        <el-button
+                                type="primary"
+                                size="small"
+                                text
+                                :disabled="!currentJson"
+                                @click="copyJson"
+                        >
+                            <el-icon>
+                                <DocumentCopy/>
+                            </el-icon>
+                            复制
+                        </el-button>
+                    </div>
+                </div>
+                <!-- 修改JSON详情视图 -->
+                <el-scrollbar height="calc(100% - 40px)" class="json-content">
+                    <pre v-if="currentJson" class="json-with-notes" v-html="renderJsonWithNotesHtml(currentMessage?.parsedMsg)"></pre>
+                    <el-empty v-else description="选择消息查看详情"></el-empty>
+                </el-scrollbar>
+            </el-main>
+        </el-container>
     </el-container>
-  </el-container>
+    <!-- 添加备注对话框 - 添加note-dialog类 -->
+    <el-dialog
+            v-model="noteDialogVisible"
+            :title="currentEditingNote && currentEditingNote.type === 'command' ? '命令备注' : '键备注'"
+            width="30%"
+            custom-class="note-dialog"
+            :close-on-click-modal="false"
+    >
+        <el-form>
+            <el-form-item>
+                <el-input
+                        v-model="noteContent"
+                        type="textarea"
+                        :rows="5"
+                        placeholder="请输入备注内容"
+                        resize="none"
+                        autofocus
+                ></el-input>
+            </el-form-item>
+        </el-form>
+        <template #footer>
+        <span class="dialog-footer">
+          <el-button @click="noteDialogVisible = false">取消</el-button>
+          <el-button type="primary" @click="saveNote">保存</el-button>
+        </span>
+        </template>
+    </el-dialog>
 </div>
 
 <script src="app.js"></script>
