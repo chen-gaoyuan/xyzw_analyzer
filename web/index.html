@@ -43,7 +43,7 @@
                             <el-icon>
                                 <Refresh/>
                             </el-icon>
-                            重新连接
+                            {{ connectionButtonText }}
                         </el-button>
                         <el-button type="danger" size="small" @click="clearMessages">
                             <el-icon>
@@ -222,7 +222,7 @@
                     <el-tab-pane label="调试" name="debug">
                         <div class="debug-container">
                             <div class="debug-header">
-                                <span class="debug-title">调试发送</span>
+                                <span class="debug-title">调试发送:{{ jsonTitle }}</span>
                             </div>
                             <div class="debug-content">
                                 <el-form>

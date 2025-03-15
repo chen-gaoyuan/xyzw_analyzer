@@ -57,7 +57,10 @@ const App = {
             if (this.connectionError) return '连接错误';
             return '已断开';
         },
-
+        connectionButtonText() {
+            if (this.isConnected) return '断开链接';
+            return '重新链接';
+        },
         // 修改filteredMessages计算属性，添加排除命令的逻辑
         filteredMessages() {
             return this.messages.filter(message => {
@@ -157,7 +160,11 @@ const App = {
 
         // 重新连接
         reconnect() {
-            this.connectWebSocket();
+            if (this.isConnected) {
+                this.closeWebSocket();
+            }else{
+                this.connectWebSocket();
+            }
         },
 
         // 处理接收到的消息
@@ -199,6 +206,7 @@ const App = {
         viewMessageDetail(message) {
             try {
                 this.currentMessage = message; // 保存当前查看的消息，用于键备注
+                console.log(this.currentMessage)
                 this.currentJson = this.formatJson(message.parsedMsg);
                 this.jsonTitle = `${message.parsedMsg.cmd}   (${this.commandNotes[message.parsedMsg.cmd]})`;
 
