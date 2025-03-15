@@ -72,9 +72,7 @@
                         <el-form-item label="命令">
                             <el-input v-model="filterCmd" placeholder="命令名称"></el-input>
                         </el-form-item>
-                        <el-form-item label="关键词">
-                            <el-input v-model="filterKeyword" placeholder="搜索关键词"></el-input>
-                        </el-form-item>
+
                         <el-form-item>
                             <el-button type="primary" @click="resetFilters">
                                 <el-icon>
@@ -82,6 +80,49 @@
                                 </el-icon>
                                 重置
                             </el-button>
+                        </el-form-item>
+                        <!-- 优化排除命令管理下拉菜单 -->
+                        <!-- 优化排除命令管理下拉菜单 -->
+                        <el-form-item v-if="excludedCommands.length > 0">
+                            <el-popover
+                                    placement="bottom"
+                                    :width="300"
+                                    trigger="click"
+                                    popper-class="excluded-commands-popover"
+                            >
+                                <template #reference>
+                                    <el-button type="warning">
+                                        <el-icon><Warning/></el-icon>
+                                        已排除 {{ excludedCommands.length }} 种消息
+                                    </el-button>
+                                </template>
+
+                                <div class="excluded-commands-container">
+                                    <div class="excluded-commands-header">
+                                        <span>已排除的命令</span>
+                                        <el-button type="primary" size="small" @click="clearAllExcludes" class="restore-all-btn">
+                                            全部恢复
+                                        </el-button>
+                                    </div>
+                                    <el-scrollbar max-height="300px">
+                                        <div class="excluded-commands-list">
+                                            <div v-for="cmd in excludedCommands" :key="cmd" class="excluded-command-item">
+                                                <span class="excluded-command-name">{{ cmd }}</span>
+                                                <el-button
+                                                        type="primary"
+                                                        size="small"
+                                                        @click="includeCommand(cmd)"
+                                                        class="restore-btn"
+                                                >
+                                                    <el-icon><Refresh-Right/></el-icon>
+                                                    恢复
+                                                </el-button>
+                                            </div>
+                                            <el-empty v-if="excludedCommands.length === 0" description="没有排除的命令"></el-empty>
+                                        </div>
+                                    </el-scrollbar>
+                                </div>
+                            </el-popover>
                         </el-form-item>
                     </el-form>
                 </div>
@@ -113,6 +154,9 @@
             </el-tooltip>
         </span>
                                 </div>
+                                <!-- 在消息操作区域添加排除按钮 -->
+                                <!-- 添加取消排除按钮 -->
+                                <!-- 修改消息操作区域，只保留排除按钮 -->
                                 <div class="message-actions">
                                     <el-button
                                             type="primary"
@@ -121,6 +165,15 @@
                                             @click.stop="viewMessageDetail(message)"
                                     >
                                         {{ message.call === 'client' ? '调试' : '查看' }}
+                                    </el-button>
+                                    <el-button
+                                            type="danger"
+                                            size="small"
+                                            text
+                                            @click.stop="excludeCommand(message.parsedMsg.cmd)"
+                                            title="排除此类消息"
+                                    >
+                                        <el-icon><Delete/></el-icon>
                                     </el-button>
                                 </div>
                             </div>

@@ -16,10 +16,10 @@ const App = {
             maxMessages: 100,
 
             // 筛选相关
-            filterKeyword: '',
             filterDirection: 'all', // 'all', 'client', 'server'
             filterCmd: '',
-
+            // 排除相关
+            excludedCommands: [], // 存储被排除的命令列表
             // 备注相关
             commandNotes: {}, // 存储命令备注，格式: {cmd: 'note'}
             keyNotes: {},     // 存储键备注，格式: {cmd: {key: 'note'}}
@@ -54,9 +54,14 @@ const App = {
             return '已断开';
         },
 
-        // 筛选后的消息列表
+        // 修改filteredMessages计算属性，添加排除命令的逻辑
         filteredMessages() {
             return this.messages.filter(message => {
+                // 排除指定命令
+                if (this.excludedCommands.includes(message.parsedMsg.cmd)) {
+                    return false;
+                }
+
                 // 方向筛选
                 if (this.filterDirection !== 'all' && message.call !== this.filterDirection) {
                     return false;
@@ -68,15 +73,13 @@ const App = {
                     return false;
                 }
 
-                // 关键词筛选
-                if (this.filterKeyword) {
-                    const jsonStr = JSON.stringify(message.parsedMsg).toLowerCase();
-                    return jsonStr.includes(this.filterKeyword.toLowerCase());
-                }
+
 
                 return true;
             });
-        }
+        },
+
+
     },
 
     mounted() {
@@ -84,6 +87,8 @@ const App = {
         this.connectWebSocket();
         // 加载备注
         this.loadNotes();
+        // 加载排除命令列表
+        this.loadExcludedCommands();
     },
 
     beforeUnmount() {
@@ -404,7 +409,7 @@ const App = {
         },
         // 重置筛选条件
         resetFilters() {
-            this.filterKeyword = '';
+
             this.filterDirection = 'all';
             this.filterCmd = '';
             this.$message.success('筛选条件已重置');
@@ -415,7 +420,34 @@ const App = {
             this.currentJson = '';
             this.$message.success('消息已清空');
         },
+// 排除指定命令的消息
+        excludeCommand(cmd) {
+            if (!this.excludedCommands.includes(cmd)) {
+                this.excludedCommands.push(cmd);
+                // 保存到本地存储
+                localStorage.setItem('excludedCommands', JSON.stringify(this.excludedCommands));
+                this.$message.success(`已排除命令: ${cmd}`);
+            }
+        },
 
+        // 取消排除命令
+        includeCommand(cmd) {
+            const index = this.excludedCommands.indexOf(cmd);
+            if (index > -1) {
+                this.excludedCommands.splice(index, 1);
+                // 保存到本地存储
+                localStorage.setItem('excludedCommands', JSON.stringify(this.excludedCommands));
+                this.$message.success(`已取消排除命令: ${cmd}`);
+            }
+        },
+
+        // 加载排除命令列表
+        loadExcludedCommands() {
+            const excludedCommands = localStorage.getItem('excludedCommands');
+            if (excludedCommands) {
+                this.excludedCommands = JSON.parse(excludedCommands);
+            }
+        },
         // 复制JSON到剪贴板
         copyJson() {
             if (!this.currentJson) {
@@ -558,6 +590,25 @@ const App = {
         hasKeyNote(cmd, key) {
             if (!this.keyNotes[cmd]) return false;
             return !!this.keyNotes[cmd][key];
+        },
+        // 处理排除命令下拉菜单的选择
+        handleExcludedCommand(command) {
+            if (command === 'clear-all') {
+                // 清除所有排除
+                this.clearAllExcludes();
+            } else {
+                // 取消排除特定命令
+                this.includeCommand(command);
+            }
+        },
+
+        // 清除所有排除
+        clearAllExcludes() {
+            if (this.excludedCommands.length === 0) return;
+
+            this.excludedCommands = [];
+            localStorage.setItem('excludedCommands', JSON.stringify(this.excludedCommands));
+            this.$message.success('已取消所有排除');
         },
     }
 };

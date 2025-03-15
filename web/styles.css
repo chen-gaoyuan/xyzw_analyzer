@@ -599,3 +599,135 @@ body {
   background-color: #66b1ff;
   border-color: #66b1ff;
 }
+/* 排除命令列表样式 */
+.excluded-commands-list {
+  max-height: 300px;
+  overflow-y: auto;
+}
+
+.excluded-command-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 0;
+  border-bottom: 1px solid #ebeef5;
+}
+
+.excluded-command-item:last-child {
+  border-bottom: none;
+}
+/* 下拉菜单项样式 */
+.el-dropdown-menu__item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-right: 20px;
+}
+
+.dropdown-item-icon {
+  margin-left: 8px;
+  font-size: 14px;
+  color: #409EFF;
+}
+
+/* 限制下拉菜单的最大高度，超出时显示滚动条 */
+.el-dropdown-menu {
+  max-height: 300px;
+  overflow-y: auto;
+}
+/* 排除命令下拉菜单样式优化 */
+.excluded-commands-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 16px;
+  border-bottom: 1px solid #ebeef5;
+  font-weight: bold;
+}
+
+.excluded-command-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+  padding: 0 8px;
+}
+
+.excluded-command-name {
+  max-width: 200px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+/* 排除命令弹出框样式优化 */
+.excluded-commands-popover {
+  padding: 0 !important;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  border-radius: 8px;
+}
+
+.excluded-commands-container {
+  display: flex;
+  flex-direction: column;
+}
+
+.excluded-commands-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 16px;
+  border-bottom: 1px solid #ebeef5;
+  background-color: #f5f7fa;
+  border-radius: 8px 8px 0 0;
+}
+
+.excluded-commands-header span {
+  font-weight: 600;
+  font-size: 14px;
+  color: #303133;
+}
+
+.restore-all-btn {
+  font-size: 12px;
+  padding: 6px 10px;
+}
+
+.excluded-commands-list {
+  padding: 8px 0;
+}
+
+.excluded-command-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 16px;
+  transition: background-color 0.3s;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.excluded-command-item:last-child {
+  border-bottom: none;
+}
+
+.excluded-command-item:hover {
+  background-color: #f5f7fa;
+}
+
+.excluded-command-name {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  margin-right: 10px;
+  font-size: 13px;
+  color: #606266;
+}
+
+.restore-btn {
+  padding: 6px 10px;
+  font-size: 12px;
+}
+
+.restore-btn .el-icon {
+  margin-right: 4px;
+}
