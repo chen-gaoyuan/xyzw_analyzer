@@ -44,12 +44,34 @@
     <!-- 主体内容 -->
     <el-container class="content-container">
       <!-- 左侧消息列表 -->
-      <el-aside width="50%" class="message-container">
-        <el-scrollbar height="100%">
+      <el-aside width="40%" class="message-container">
+        <div class="filter-container">
+          <el-form :inline="true" size="small">
+            <el-form-item label="方向">
+              <el-select v-model="filterDirection" placeholder="消息方向">
+                <el-option label="全部" value="all"></el-option>
+                <el-option label="发送" value="client"></el-option>
+                <el-option label="接收" value="server"></el-option>
+              </el-select>
+            </el-form-item>
+            <el-form-item label="命令">
+              <el-input v-model="filterCmd" placeholder="命令名称"></el-input>
+            </el-form-item>
+            <el-form-item label="关键词">
+              <el-input v-model="filterKeyword" placeholder="搜索关键词"></el-input>
+            </el-form-item>
+            <el-form-item>
+              <el-button type="primary" @click="resetFilters">
+                <el-icon><Refresh /></el-icon> 重置
+              </el-button>
+            </el-form-item>
+          </el-form>
+        </div>
+        <el-scrollbar height="calc(100% - 70px)">
           <div class="message-list">
-            <el-empty v-if="messages.length === 0" description="暂无消息"></el-empty>
+            <el-empty v-if="filteredMessages.length === 0" description="暂无消息"></el-empty>
             <div
-                    v-for="(message, index) in messages"
+                    v-for="(message, index) in filteredMessages"
                     :key="index"
                     class="message-item"
                     :class="{ 'is-expanded': message.expanded }"

@@ -7,13 +7,18 @@ const App = {
       isConnected: false,
       connectionError: false,
       connecting: false,
-      
+
       // 消息数据
       messages: [],
       currentJson: '',
-      
+
       // 最大消息数量限制，防止内存占用过多
-      maxMessages: 100
+      maxMessages: 100,
+
+      // 筛选相关
+      filterKeyword: '',
+      filterDirection: 'all', // 'all', 'client', 'server'
+      filterCmd: ''
     };
   },
   
@@ -24,12 +29,36 @@ const App = {
       if (this.connectionError) return 'danger';
       return 'info';
     },
-    
+
     // 连接状态文本
     connectionStatusText() {
       if (this.isConnected) return '已连接';
       if (this.connectionError) return '连接错误';
       return '已断开';
+    },
+
+    // 筛选后的消息列表
+    filteredMessages() {
+      return this.messages.filter(message => {
+        // 方向筛选
+        if (this.filterDirection !== 'all' && message.call !== this.filterDirection) {
+          return false;
+        }
+
+        // 命令筛选
+        if (this.filterCmd && (!message.parsedMsg.cmd ||
+            !message.parsedMsg.cmd.toLowerCase().includes(this.filterCmd.toLowerCase()))) {
+          return false;
+        }
+
+        // 关键词筛选
+        if (this.filterKeyword) {
+          const jsonStr = JSON.stringify(message.parsedMsg).toLowerCase();
+          return jsonStr.includes(this.filterKeyword.toLowerCase());
+        }
+
+        return true;
+      });
     }
   },
   
@@ -146,7 +175,13 @@ const App = {
         this.$message.error('JSON格式化错误: ' + e.message);
       }
     },
-    
+    // 重置筛选条件
+    resetFilters() {
+      this.filterKeyword = '';
+      this.filterDirection = 'all';
+      this.filterCmd = '';
+      this.$message.success('筛选条件已重置');
+    },
     // 清空所有消息
     clearMessages() {
       this.messages = [];

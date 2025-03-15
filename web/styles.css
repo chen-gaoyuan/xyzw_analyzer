@@ -201,3 +201,44 @@ body {
     height: 50%;
   }
 }
+/* 筛选区域样式 */
+.filter-container {
+  padding: 10px 15px;
+  background-color: #f9f9f9;
+  border-bottom: 1px solid #e6e6e6;
+}
+
+.filter-container .el-form {
+  display: flex;
+  flex-wrap: wrap;
+}
+
+.filter-container .el-form-item {
+  margin-bottom: 5px;
+  margin-right: 10px;
+}
+
+.filter-container .el-input,
+.filter-container .el-select {
+  width: 120px;
+}
+
+/* 在小屏幕上调整筛选区域 */
+@media (max-width: 768px) {
+  .filter-container .el-form {
+    flex-direction: column;
+  }
+
+  .filter-container .el-form-item {
+    margin-right: 0;
+  }
+
+  .filter-container .el-input,
+  .filter-container .el-select {
+    width: 100%;
+  }
+
+  .el-scrollbar {
+    height: calc(100% - 150px) !important;
+  }
+}
