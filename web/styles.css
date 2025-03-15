@@ -734,3 +734,65 @@ body {
 .restore-btn .el-icon {
   margin-right: 4px;
 }
+/* Tab页样式 */
+.json-tabs {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.json-tabs .el-tabs__content {
+  flex: 1;
+  overflow: hidden;
+}
+
+.json-tabs .el-tab-pane {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+/* 调试区域样式 */
+.debug-container {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  padding: 15px;
+}
+
+.debug-header {
+  margin-bottom: 15px;
+}
+
+.debug-title {
+  font-size: 16px;
+  font-weight: bold;
+  color: #409EFF;
+}
+
+.debug-content {
+  flex: 1;
+  overflow: auto;
+}
+
+.debug-content .el-form {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.debug-content .el-form-item:first-child {
+  flex: 1;
+  margin-bottom: 15px;
+}
+
+.debug-content .el-textarea {
+  height: 100%;
+}
+
+.debug-content .el-textarea__inner {
+  height: 100%;
+  font-family: 'Consolas', monospace;
+  font-size: 14px;
+  line-height: 1.5;
+}

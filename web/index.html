@@ -193,28 +193,63 @@
 
             <!-- 右侧JSON详情 -->
             <el-main class="json-detail">
-                <div class="json-header">
-                    <span class="json-title">JSON 数据</span>
-                    <div class="json-actions">
-                        <el-button
-                                type="primary"
-                                size="small"
-                                text
-                                :disabled="!currentJson"
-                                @click="copyJson"
-                        >
-                            <el-icon>
-                                <DocumentCopy/>
-                            </el-icon>
-                            复制
-                        </el-button>
-                    </div>
-                </div>
-                <!-- 修改JSON详情视图 -->
-                <el-scrollbar height="calc(100% - 40px)" class="json-content">
-                    <pre v-if="currentJson" class="json-with-notes" v-html="renderJsonWithNotesHtml(currentMessage?.parsedMsg)"></pre>
-                    <el-empty v-else description="选择消息查看详情"></el-empty>
-                </el-scrollbar>
+                <el-tabs v-model="activeTab" class="json-tabs">
+                    <el-tab-pane label="详情" name="detail">
+                        <div class="json-header">
+                            <span class="json-title">{{ jsonTitle }}</span>
+                            <div class="json-actions">
+                                <el-button
+                                        type="primary"
+                                        size="small"
+                                        text
+                                        :disabled="!currentJson"
+                                        @click="copyJson"
+                                >
+                                    <el-icon>
+                                        <DocumentCopy/>
+                                    </el-icon>
+                                    复制
+                                </el-button>
+                            </div>
+                        </div>
+                        <!-- 修改JSON详情视图 -->
+                        <el-scrollbar height="calc(100% - 40px)" class="json-content">
+                            <pre v-if="currentJson" class="json-with-notes"></pre>
+                            <el-empty v-else description="选择消息查看详情"></el-empty>
+                        </el-scrollbar>
+                    </el-tab-pane>
+
+                    <el-tab-pane label="调试" name="debug">
+                        <div class="debug-container">
+                            <div class="debug-header">
+                                <span class="debug-title">调试发送</span>
+                            </div>
+                            <div class="debug-content">
+                                <el-form>
+                                    <el-form-item>
+                                        <el-input
+                                                v-model="debugContent"
+                                                type="textarea"
+                                                :rows="10"
+                                                placeholder="请输入要发送的JSON内容"
+                                                resize="none"
+                                        ></el-input>
+                                    </el-form-item>
+                                    <el-form-item>
+                                        <el-button type="primary" @click="sendDebugMessage" :disabled="!isConnected">
+                                            <el-icon><Position/></el-icon>
+                                            发送
+                                        </el-button>
+                                        <el-button @click="formatDebugContent">
+                                            <el-icon><Magic-Stick/></el-icon>
+                                            格式化
+                                        </el-button>
+                                    </el-form-item>
+                                </el-form>
+                            </div>
+                        </div>
+                    </el-tab-pane>
+                </el-tabs>
             </el-main>
         </el-container>
     </el-container>

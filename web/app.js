@@ -26,6 +26,10 @@ const App = {
             currentEditingNote: null, // 当前正在编辑的备注对象
             noteDialogVisible: false, // 备注对话框可见性
             noteContent: '',          // 备注内容
+            // Tab相关
+            activeTab: 'detail',
+            debugContent: '',
+            jsonTitle: ''
         };
     },
 // 添加watch监听noteDialogVisible的变化
@@ -72,7 +76,6 @@ const App = {
                     !message.parsedMsg.cmd.toLowerCase().includes(this.filterCmd.toLowerCase()))) {
                     return false;
                 }
-
 
 
                 return true;
@@ -191,11 +194,20 @@ const App = {
             message.expanded = !message.expanded;
         },
 
-        // 查看消息详情
+
+        // 查看消息详情时，设置调试内容
         viewMessageDetail(message) {
             try {
                 this.currentMessage = message; // 保存当前查看的消息，用于键备注
                 this.currentJson = this.formatJson(message.parsedMsg);
+                this.jsonTitle = `${message.parsedMsg.cmd}   (${this.commandNotes[message.parsedMsg.cmd]})`;
+
+                // 设置调试内容为body部分
+                if (message.parsedMsg.body) {
+                    this.debugContent = this.formatJson(message.parsedMsg.body);
+                } else {
+                    this.debugContent = '{}';
+                }
 
                 // 在DOM更新后添加JSON键的点击事件
                 this.$nextTick(() => {
@@ -206,6 +218,32 @@ const App = {
                 this.$message.error('JSON格式化错误: ' + e.message);
             }
         },
+        // 格式化调试内容
+        formatDebugContent() {
+            try {
+                const jsonObj = JSON.parse(this.debugContent);
+                this.debugContent = this.formatJson(jsonObj);
+                this.$message.success('格式化成功');
+            } catch (e) {
+                this.$message.error('JSON格式错误: ' + e.message);
+            }
+        },
+        // 发送调试消息
+        sendDebugMessage() {
+            if (!this.isConnected) {
+                this.$message.error('WebSocket未连接');
+                return;
+            }
+
+            try {
+                const jsonObj = JSON.parse(this.debugContent);
+                this.websocket.send(JSON.stringify(jsonObj));
+                this.$message.success('发送成功');
+            } catch (e) {
+                this.$message.error('发送失败: ' + e.message);
+            }
+        },
+
 // 添加新方法，用于处理JSON键的点击事件
         addJsonKeyClickHandlers() {
             const jsonContent = document.querySelector('.json-content pre');
