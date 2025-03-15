@@ -29,29 +29,17 @@ func (e *BonEncoder) Reset() {
 func (e *BonEncoder) EncodeNumber(val interface{}) error {
 	switch v := val.(type) {
 	case int:
-		if v >= -2147483648 && v <= 2147483647 {
-			return e.EncodeInt(v)
-		}
-		return e.EncodeLong(int64(v))
+		return e.EncodeInt(v)
 	case int8, int16, int32, uint8, uint16:
 		return e.EncodeInt(int(reflect.ValueOf(v).Int()))
 	case int64, uint, uint32, uint64:
 		return e.EncodeLong(reflect.ValueOf(v).Int())
 	case float32:
-		return e.EncodeFloat(v)
+		return e.EncodeInt(int(v))
 	case float64:
 		// 检查是否可以表示为更小的类型
-		intVal := int64(v)
-		if float64(intVal) == v {
-			if intVal >= -2147483648 && intVal <= 2147483647 {
-				return e.EncodeInt(int(intVal))
-			}
-			return e.EncodeLong(intVal)
-		}
-		if float64(float32(v)) == v {
-			return e.EncodeFloat(float32(v))
-		}
-		return e.EncodeDouble(v)
+		intVal := int(v)
+		return e.EncodeInt(intVal)
 	default:
 		return e.EncodeDouble(reflect.ValueOf(v).Float())
 	}
@@ -160,16 +148,7 @@ func (e *BonEncoder) EncodeInt(val int) error {
 func (e *BonEncoder) EncodeLong(val interface{}) error {
 	e.dw.WriteInt8(2)
 
-	switch v := val.(type) {
-	case int64:
-		e.dw.WriteInt64(v)
-	case Int64:
-		e.dw.WriteInt32(v.Low)
-		e.dw.WriteInt32(v.High)
-	default:
-		// 尝试转换为int64
-		e.dw.WriteInt64(reflect.ValueOf(val).Int())
-	}
+	e.dw.WriteInt64(reflect.ValueOf(val).Int())
 
 	return nil
 }

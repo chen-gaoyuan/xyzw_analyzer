@@ -161,11 +161,19 @@ func (w *DataWriter) WriteUTF(val string) {
 	expectedLenFieldSize := w._7BitIntLen(estimatedLen)
 
 	if lenFieldSize != expectedLenFieldSize {
-		// 移动数据
-		copy(w.data[contentStartPos+(lenFieldSize-expectedLenFieldSize):], w.data[contentStartPos:currentPos-contentStartPos])
+		// 修复：正确计算源和目标切片
+		diff := lenFieldSize - expectedLenFieldSize
+		if diff > 0 {
+			// 长度字段比预期长，需要向后移动数据
+			copy(w.data[contentStartPos+diff:], w.data[contentStartPos:contentStartPos+(currentPos-contentStartPos)])
+		} else {
+			// 长度字段比预期短，需要向前移动数据
+			copy(w.data[contentStartPos+diff:], w.data[contentStartPos:currentPos])
+		}
 	}
 
-	w.position = contentStartPos + actualLen
+	// 更新最终位置
+	w.position = contentStartPos + (lenFieldSize - expectedLenFieldSize) + actualLen
 }
 
 // WriteUint8Array 写入字节数组

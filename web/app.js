@@ -162,7 +162,7 @@ const App = {
         reconnect() {
             if (this.isConnected) {
                 this.closeWebSocket();
-            }else{
+            } else {
                 this.connectWebSocket();
             }
         },
@@ -244,11 +244,31 @@ const App = {
             }
 
             try {
-                const jsonObj = JSON.parse(this.debugContent);
-                this.websocket.send(JSON.stringify(jsonObj));
-                this.$message.success('发送成功');
+                const jsonObj = {};
+                jsonObj.cmd = this.currentMessage.parsedMsg.cmd;
+                jsonObj.data=JSON.parse(this.debugContent)
+                // 发送到后端队列
+                fetch('/api/debug/send', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(jsonObj)
+                })
+                    .then(response => {
+                        if (!response.ok) {
+                            throw new Error('发送失败');
+                        }
+                        return response.json();
+                    })
+                    .then(data => {
+                        this.$message.success('消息已加入队列，将在2秒内发送');
+                    })
+                    .catch(error => {
+                        this.$message.error('发送失败: ' + error.message);
+                    });
             } catch (e) {
-                this.$message.error('发送失败: ' + e.message);
+                this.$message.error('JSON格式错误: ' + e.message);
             }
         },
 
@@ -524,23 +544,68 @@ const App = {
             return `${hours}:${minutes}:${seconds}`;
         },
         // 保存备注到本地存储
+        // 修改saveNotes方法，将备注数据保存到后端
         saveNotes() {
+            // 同时保存到本地存储作为备份
             localStorage.setItem('commandNotes', JSON.stringify(this.commandNotes));
             localStorage.setItem('keyNotes', JSON.stringify(this.keyNotes));
+
+            // 发送到后端保存
+            fetch('/api/notes/save', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    commandNotes: this.commandNotes,
+                    keyNotes: this.keyNotes
+                })
+            })
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('保存备注失败');
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    console.log('备注数据保存成功');
+                })
+                .catch(error => {
+                    console.error('保存备注错误:', error);
+                    this.$message.error('保存备注失败: ' + error.message);
+                });
         },
 
-        // 从本地存储加载备注
+        // 修改loadNotes方法，从后端加载备注数据
         loadNotes() {
-            const commandNotes = localStorage.getItem('commandNotes');
-            const keyNotes = localStorage.getItem('keyNotes');
+            fetch('/api/notes/load')
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('加载备注失败');
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    this.commandNotes = data.commandNotes || {};
+                    this.keyNotes = data.keyNotes || {};
+                    console.log('备注数据加载成功');
+                })
+                .catch(error => {
+                    console.error('加载备注错误:', error);
+                    this.$message.error('加载备注失败: ' + error.message);
 
-            if (commandNotes) {
-                this.commandNotes = JSON.parse(commandNotes);
-            }
+                    // 加载失败时尝试从本地存储加载
+                    const commandNotes = localStorage.getItem('commandNotes');
+                    const keyNotes = localStorage.getItem('keyNotes');
 
-            if (keyNotes) {
-                this.keyNotes = JSON.parse(keyNotes);
-            }
+                    if (commandNotes) {
+                        this.commandNotes = JSON.parse(commandNotes);
+                    }
+
+                    if (keyNotes) {
+                        this.keyNotes = JSON.parse(keyNotes);
+                    }
+                });
         },
         // 打开命令备注对话框
         openCommandNoteDialog(message) {
