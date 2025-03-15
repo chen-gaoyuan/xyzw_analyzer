@@ -201,9 +201,12 @@ body {
     height: 50%;
   }
 }
+.el-scrollbar{
+  height: 93%;
+}
 /* 筛选区域样式 */
 .filter-container {
-  padding: 10px 15px;
+  padding: 13px 15px;
   background-color: #f9f9f9;
   border-bottom: 1px solid #e6e6e6;
 }
@@ -271,7 +274,7 @@ body {
 .message-actions {
   display: flex;
   align-items: center;
-  gap: 8px;
+  /*gap: 8px;*/
 }
 
 /* JSON中的备注样式 */
@@ -684,7 +687,7 @@ body {
 .excluded-commands-header span {
   font-weight: 600;
   font-size: 14px;
-  color: #303133;
+  /*color: #303133;*/
 }
 
 .restore-all-btn {

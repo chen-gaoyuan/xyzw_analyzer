@@ -59,7 +59,7 @@
         <!-- 主体内容 -->
         <el-container class="content-container">
             <!-- 左侧消息列表 -->
-            <el-aside width="40%" class="message-container">
+            <el-aside width="40%" class="message-container" >
                 <div class="filter-container">
                     <el-form :inline="true" size="small">
                         <el-form-item label="方向">
@@ -165,6 +165,7 @@
                                             @click.stop="viewMessageDetail(message)"
                                     >
                                         {{ message.call === 'client' ? '调试' : '查看' }}
+                                        <el-icon><Search/></el-icon>
                                     </el-button>
                                     <el-button
                                             type="danger"
@@ -172,7 +173,7 @@
                                             text
                                             @click.stop="excludeCommand(message.parsedMsg.cmd)"
                                             title="排除此类消息"
-                                    >
+                                    >排除
                                         <el-icon><Delete/></el-icon>
                                     </el-button>
                                 </div>
