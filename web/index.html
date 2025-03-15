@@ -1,53 +1,106 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="zh-CN">
 <head>
   <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>咸鱼之王辅助分析</title>
-  <link
-          rel="stylesheet"
-          href="https://unpkg.com/layui@2.9.21/dist/css/layui.css"
-  />
-  <script src="https://unpkg.com/layui@2.9.21/dist/layui.js"></script>
-  <script src="https://apps.bdimg.com/libs/jquery/2.1.4/jquery.min.js"></script>
+  <!-- 引入Vue 3 -->
+  <script src="https://cdn.jsdelivr.net/npm/vue@3.3.4/dist/vue.global.prod.js"></script>
+  <!-- 引入Element Plus -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/element-plus@2.3.8/dist/index.css" />
+  <script src="https://cdn.jsdelivr.net/npm/element-plus@2.3.8/dist/index.full.min.js"></script>
+  <!-- 引入Element Plus图标 -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@element-plus/icons-vue@2.1.0/dist/index.css" />
+  <script src="https://cdn.jsdelivr.net/npm/@element-plus/icons-vue@2.1.0/dist/index.iife.min.js"></script>
+  <!-- 自定义样式 -->
   <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-<div class="layui-container">
-  <fieldset
-          class="layui-elem-field layui-field-title"
-  >
-    <legend>咸鱼之王辅助分析</legend>
-  </fieldset>
+<div id="app">
+  <el-container class="main-container">
+    <!-- 头部 -->
+    <el-header height="auto" class="app-header">
+      <div class="header-content">
+        <h1 class="app-title">咸鱼之王辅助分析</h1>
+        <div class="connection-status">
+          <el-tag :type="connectionStatusType" size="small" effect="dark">
+            <el-icon v-if="isConnected"><Check /></el-icon>
+            <el-icon v-else-if="connectionError"><WarningFilled /></el-icon>
+            <el-icon v-else><Close /></el-icon>
+            {{ connectionStatusText }}
+          </el-tag>
+          <el-button-group class="control-buttons">
+            <el-button type="primary" size="small" @click="reconnect" :loading="connecting">
+              <el-icon><Refresh /></el-icon> 重新连接
+            </el-button>
+            <el-button type="danger" size="small" @click="clearMessages">
+              <el-icon><Delete /></el-icon> 清空消息
+            </el-button>
+          </el-button-group>
+        </div>
+      </div>
+    </el-header>
 
-  <div class="layui-card">
-    <div class="layui-card-header">
-      <span id="status" class="connection-status">未连接</span>
-      <div class="control-buttons">
-        <button id="clearBtn" class="layui-btn layui-btn-sm layui-btn-danger">清空消息</button>
-        <button id="reconnectBtn" class="layui-btn layui-btn-sm layui-btn-normal">重新连接</button>
-      </div>
-    </div>
-  </div>
+    <!-- 主体内容 -->
+    <el-container class="content-container">
+      <!-- 左侧消息列表 -->
+      <el-aside width="50%" class="message-container">
+        <el-scrollbar height="100%">
+          <div class="message-list">
+            <el-empty v-if="messages.length === 0" description="暂无消息"></el-empty>
+            <div
+                    v-for="(message, index) in messages"
+                    :key="index"
+                    class="message-item"
+                    :class="{ 'is-expanded': message.expanded }"
+                    @click="toggleExpand(message)"
+            >
+              <div class="message-header">
+                <div :class="['message-direction', message.call === 'client' ? 'send' : 'receive']">
+                  {{ getCurrentTime(message.timestamp) }}
+                  {{ message.call === 'client' ? 'Send:' : 'Receive:' }}
+                  {{ message.parsedMsg.cmd }}
+                </div>
+                <el-button
+                        type="primary"
+                        size="small"
+                        text
+                        @click.stop="viewMessageDetail(message)"
+                >
+                  {{ message.call === 'client' ? '调试' : '查看' }}
+                </el-button>
+              </div>
+              <div v-show="message.expanded" class="message-content">
+                <pre>{{ formatJson(message.parsedMsg) }}</pre>
+              </div>
+            </div>
+          </div>
+        </el-scrollbar>
+      </el-aside>
 
-  <div class="container" id="mainContainer">
-    <div class="message-container">
-      <div class="message-list" id="messages">
-        <!-- Messages will be appended here -->
-      </div>
-    </div>
-
-    <div class="json-output">
-      <div class="json-header">
-        <label>JSON 数据</label>
-        <button id="copyJsonBtn" class="layui-btn layui-btn-xs layui-btn-primary">复制</button>
-      </div>
-      <div class="json-content">
-        <pre id="jsonContent"></pre>
-      </div>
-    </div>
-  </div>
+      <!-- 右侧JSON详情 -->
+      <el-main class="json-detail">
+        <div class="json-header">
+          <span class="json-title">JSON 数据</span>
+          <el-button
+                  type="primary"
+                  size="small"
+                  text
+                  :disabled="!currentJson"
+                  @click="copyJson"
+          >
+            <el-icon><DocumentCopy /></el-icon> 复制
+          </el-button>
+        </div>
+        <el-scrollbar height="calc(100% - 40px)" class="json-content">
+          <pre v-if="currentJson">{{ currentJson }}</pre>
+          <el-empty v-else description="选择消息查看详情"></el-empty>
+        </el-scrollbar>
+      </el-main>
+    </el-container>
+  </el-container>
 </div>
 
-<script src="main.js"></script>
+<script src="app.js"></script>
 </body>
 </html>
