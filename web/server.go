@@ -19,7 +19,10 @@ func StartWebServer() {
 
 	// 设置调试消息API路由
 	http.HandleFunc("/api/debug/send", api.HandleDebugMessage)
-
+	// 添加以下路由到现有的路由注册部分
+	http.HandleFunc("/api/scripts/save", api.HandleSaveScript)
+	http.HandleFunc("/api/scripts/load", api.HandleLoadScripts)
+	http.HandleFunc("/api/scripts/delete", api.HandleDeleteScript)
 	// 直接提供静态文件
 	fs := http.FileServer(http.Dir("./web/static"))
 	http.Handle("/", http.StripPrefix("/", fs))

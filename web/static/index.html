@@ -81,6 +81,12 @@
                                 重置
                             </el-button>
                         </el-form-item>
+                        <el-form-item>
+                            <el-button type="success" @click="openScriptManager">
+                                <el-icon><Document /></el-icon>
+                                脚本管理
+                            </el-button>
+                        </el-form-item>
                         <!-- 优化排除命令管理下拉菜单 -->
                         <!-- 优化排除命令管理下拉菜单 -->
                         <el-form-item v-if="excludedCommands.length > 0">
@@ -93,7 +99,7 @@
                                 <template #reference>
                                     <el-button type="warning">
                                         <el-icon><Warning/></el-icon>
-                                        已排除 {{ excludedCommands.length }} 种消息
+                                         {{ excludedCommands.length }}
                                     </el-button>
                                 </template>
 
@@ -279,6 +285,101 @@
           <el-button type="primary" @click="saveNote">保存</el-button>
         </span>
         </template>
+    </el-dialog>
+    <el-dialog
+            v-model="scriptManagerVisible"
+            title="脚本管理"
+            width="70%"
+            :close-on-click-modal="false"
+            custom-class="script-dialog"
+    >
+        <div class="script-manager-container">
+            <div class="script-list-header">
+                <el-button type="primary" @click="createNewScript">
+                    <el-icon><Plus /></el-icon>
+                    新建脚本
+                </el-button>
+            </div>
+
+            <el-table :data="scripts" style="width: 100%" v-loading="scriptsLoading">
+                <el-table-column prop="name" label="脚本名称" min-width="150">
+                    <template #default="scope">
+                        <el-input
+                                v-if="scope.row.editing"
+                                v-model="scope.row.name"
+                                placeholder="请输入脚本名称"
+                        ></el-input>
+                        <span v-else>{{ scope.row.name }}</span>
+                    </template>
+                </el-table-column>
+
+                <el-table-column prop="enabled" label="状态" width="100">
+                    <template #default="scope">
+                        <el-switch
+                                v-model="scope.row.enabled"
+                                :disabled="scope.row.editing"
+                                @change="toggleScriptStatus(scope.row)"
+                        ></el-switch>
+                    </template>
+                </el-table-column>
+
+                <el-table-column prop="createdAt" label="创建时间" width="180">
+                    <template #default="scope">
+                        {{ formatDate(scope.row.createdAt) }}
+                    </template>
+                </el-table-column>
+
+                <el-table-column label="操作" width="200">
+                    <template #default="scope">
+                        <div v-if="scope.row.editing">
+                            <el-button type="primary" size="small" @click="saveScript(scope.row)">
+                                保存
+                            </el-button>
+                            <el-button size="small" @click="cancelEdit(scope.row)">
+                                取消
+                            </el-button>
+                        </div>
+                        <div v-else>
+                            <el-button type="primary" size="small" @click="editScript(scope.row)">
+                                编辑
+                            </el-button>
+                            <el-button type="danger" size="small" @click="deleteScript(scope.row)">
+                                删除
+                            </el-button>
+                        </div>
+                    </template>
+                </el-table-column>
+            </el-table>
+        </div>
+
+        <!-- 脚本编辑对话框 -->
+        <el-dialog
+                v-model="scriptEditVisible"
+                title="编辑脚本内容"
+                width="80%"
+                append-to-body
+                :close-on-click-modal="false"
+        >
+            <div class="script-editor-container" v-if="currentScript">
+                <el-form>
+                    <el-form-item>
+                        <el-input
+                                v-model="currentScript.content"
+                                type="textarea"
+                                :rows="15"
+                                placeholder="请输入脚本内容（JavaScript代码）"
+                                resize="none"
+                        ></el-input>
+                    </el-form-item>
+                </el-form>
+            </div>
+            <template #footer>
+        <span class="dialog-footer">
+            <el-button @click="scriptEditVisible = false">取消</el-button>
+            <el-button type="primary" @click="saveScriptContent">保存</el-button>
+        </span>
+            </template>
+        </el-dialog>
     </el-dialog>
 </div>
 

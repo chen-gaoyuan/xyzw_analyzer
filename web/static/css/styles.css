@@ -1176,5 +1176,29 @@ body {
   padding: 15px;
 }
 
-/* ... 现有样式 ... */
+/* 脚本管理相关样式 */
+.script-manager-container {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.script-list-header {
+  margin-bottom: 15px;
+  display: flex;
+  justify-content: space-between;
+}
+
+.script-editor-container {
+  height: 100%;
+}
+
+.script-dialog .el-dialog__body {
+  padding-top: 10px;
+}
+
+/* 表格样式优化 */
+.el-table .cell {
+  word-break: break-word;
+}
 

@@ -29,7 +29,14 @@ const App = {
             // Tab相关
             activeTab: 'detail',
             debugContent: '',
-            jsonTitle: ''
+            jsonTitle: '',
+            // 脚本管理相关
+            scriptManagerVisible: false,  // 脚本管理对话框可见性
+            scriptEditVisible: false,     // 脚本编辑对话框可见性
+            scripts: [],                  // 脚本列表
+            currentScript: null,          // 当前编辑的脚本
+            scriptsLoading: false,        // 脚本加载状态
+            scriptBackup: null,           // 脚本编辑备份
         };
     },
 // 添加watch监听noteDialogVisible的变化
@@ -774,6 +781,209 @@ const App = {
             localStorage.setItem('excludedCommands', JSON.stringify(this.excludedCommands));
             this.$message.success('已取消所有排除');
         },
+
+        // 打开脚本管理器
+        openScriptManager() {
+            this.scriptManagerVisible = true;
+            this.loadScripts();
+        },
+
+        // 加载脚本列表
+        loadScripts() {
+            this.scriptsLoading = true;
+            fetch('/api/scripts/load')
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('加载脚本失败');
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    this.scripts = data.scripts || [];
+                    console.log('脚本数据加载成功');
+                })
+                .catch(error => {
+                    console.error('加载脚本错误:', error);
+                    this.$message.error('加载脚本失败: ' + error.message);
+                })
+                .finally(() => {
+                    this.scriptsLoading = false;
+                });
+        },
+
+        // 创建新脚本
+        createNewScript() {
+            const newScript = {
+                id: '',
+                name: '新脚本',
+                content: '// 在这里编写您的JavaScript代码\n// 例如：\nconsole.log("Hello, World!");',
+                enabled: false,
+                createdAt: new Date().toISOString(),
+                editing: true
+            };
+
+            this.scripts.unshift(newScript);
+            this.editScript(newScript);
+        },
+
+        // 编辑脚本
+        editScript(script) {
+            // 备份脚本，以便取消编辑时恢复
+            this.scriptBackup = JSON.parse(JSON.stringify(script));
+
+            // 标记为编辑状态
+            script.editing = true;
+
+            // 打开编辑对话框
+            this.currentScript = script;
+            this.scriptEditVisible = true;
+        },
+
+        // 保存脚本内容
+        saveScriptContent() {
+            this.scriptEditVisible = false;
+            // 内容已经通过v-model绑定到currentScript.content
+        },
+
+        // 保存脚本
+        saveScript(script) {
+            // 移除编辑状态标记
+            const scriptToSave = { ...script };
+            delete scriptToSave.editing;
+
+            fetch('/api/scripts/save', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(scriptToSave)
+            })
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('保存脚本失败');
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    this.$message.success('脚本保存成功');
+
+                    // 更新脚本列表中的数据
+                    const index = this.scripts.findIndex(s => s.id === data.id);
+                    if (index !== -1) {
+                        this.scripts[index] = { ...data, editing: false };
+                    } else {
+                        this.scripts.unshift({ ...data, editing: false });
+                    }
+                })
+                .catch(error => {
+                    console.error('保存脚本错误:', error);
+                    this.$message.error('保存脚本失败: ' + error.message);
+                });
+        },
+
+        // 取消编辑
+        cancelEdit(script) {
+            // 首先关闭编辑对话框
+            this.scriptEditVisible = false;
+
+            if (script.id === '') {
+                // 如果是新创建的脚本，直接从列表中移除
+                const index = this.scripts.findIndex(s => s === script);
+                if (index !== -1) {
+                    this.scripts.splice(index, 1);
+                }
+            } else if (this.scriptBackup) {
+                // 恢复备份数据
+                const index = this.scripts.findIndex(s => s.id === script.id);
+                if (index !== -1) {
+                    this.scripts[index] = { ...this.scriptBackup, editing: false };
+                }
+            }
+
+            // 清除备份和当前编辑脚本
+            this.scriptBackup = null;
+
+            // 延迟设置currentScript为null，确保对话框已完全关闭
+            setTimeout(() => {
+                this.currentScript = null;
+            }, 100);
+        },
+
+        // 删除脚本
+        deleteScript(script) {
+            this.$confirm('确定要删除脚本 "' + script.name + '" 吗?', '提示', {
+                confirmButtonText: '确定',
+                cancelButtonText: '取消',
+                type: 'warning'
+            }).then(() => {
+                fetch('/api/scripts/delete', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ id: script.id })
+                })
+                    .then(response => {
+                        if (!response.ok) {
+                            throw new Error('删除脚本失败');
+                        }
+                        return response.json();
+                    })
+                    .then(data => {
+                        this.$message.success('脚本删除成功');
+
+                        // 从列表中移除
+                        const index = this.scripts.findIndex(s => s.id === script.id);
+                        if (index !== -1) {
+                            this.scripts.splice(index, 1);
+                        }
+                    })
+                    .catch(error => {
+                        console.error('删除脚本错误:', error);
+                        this.$message.error('删除脚本失败: ' + error.message);
+                    });
+            }).catch(() => {
+                // 取消删除
+            });
+        },
+
+        // 切换脚本启用状态
+        toggleScriptStatus(script) {
+            const scriptToSave = { ...script };
+            delete scriptToSave.editing;
+
+            fetch('/api/scripts/save', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(scriptToSave)
+            })
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('更新脚本状态失败');
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    this.$message.success(`脚本已${data.enabled ? '启用' : '禁用'}`);
+                })
+                .catch(error => {
+                    console.error('更新脚本状态错误:', error);
+                    this.$message.error('更新脚本状态失败: ' + error.message);
+
+                    // 恢复原状态
+                    script.enabled = !script.enabled;
+                });
+        },
+
+        // 格式化日期
+        formatDate(dateString) {
+            if (!dateString) return '';
+            const date = new Date(dateString);
+            return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')} ${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}:${String(date.getSeconds()).padStart(2, '0')}`;
+        },
+
     }
 };
 
