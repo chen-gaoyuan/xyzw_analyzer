@@ -131,7 +131,7 @@ func ConsumeDebugQueue() {
 					Ack:  0,
 					Body: bon.EncodeToBytes(msg.Data),
 					Cmd:  msg.Cmd,
-					Seq:  int32(sendSeq + 10000),
+					Seq:  int32(sendSeq + 1),
 					Time: time.Now().UnixMilli(),
 				}
 				bs, err := bon.EncodeAndEncryptX(debugMsg)

@@ -935,6 +935,7 @@ const App = {
         // 打开脚本管理器
         openScriptManager() {
             this.scriptManagerVisible = true;
+            this.scripts = []; // 先清空脚本列表
             this.loadScripts();
         },
 
@@ -994,8 +995,16 @@ function process(messageData) {
                 editing: true
             };
 
-            this.scripts.unshift(newScript);
-            this.editScript(newScript);
+            // 直接编辑新脚本，而不是添加到数组中
+            // this.scripts.unshift(newScript); // 删除这行，避免重复添加
+            this.currentScript = newScript;
+            this.scriptEditVisible = true;
+            this.scriptEditActiveTab = 'editor';
+
+            // 在下一个周期初始化编辑器
+            this.$nextTick(() => {
+                this.initMonacoEditor();
+            });
         },
 
 
@@ -1099,6 +1108,9 @@ function process(messageData) {
 
                         this.scriptEditVisible = false;
                         this.saveScript(this.currentScript);
+
+                        // 保存后重新加载脚本列表，确保数据一致性
+                        this.loadScripts();
                     } catch (e) {
                         console.error('获取编辑器内容错误:', e);
                         this.$message.error('获取编辑器内容失败');
@@ -1106,6 +1118,9 @@ function process(messageData) {
                 } else {
                     this.scriptEditVisible = false;
                     this.saveScript(this.currentScript);
+
+                    // 保存后重新加载脚本列表，确保数据一致性
+                    this.loadScripts();
                 }
             }, 10);
         },
@@ -1154,6 +1169,9 @@ function process(messageData) {
             const scriptToSave = {...script};
             delete scriptToSave.editing;
 
+            // 添加日志，帮助调试
+            console.log('保存脚本:', scriptToSave);
+
             fetch('/api/scripts/save', {
                 method: 'POST',
                 headers: {
@@ -1183,33 +1201,64 @@ function process(messageData) {
                     this.$message.error('保存脚本失败: ' + error.message);
                 });
         },
-
-        // 取消编辑
-        cancelEdit(script) {
-            // 首先关闭编辑对话框
-            this.scriptEditVisible = false;
-
-            if (script.id === '') {
-                // 如果是新创建的脚本，直接从列表中移除
-                const index = this.scripts.findIndex(s => s === script);
-                if (index !== -1) {
-                    this.scripts.splice(index, 1);
-                }
-            } else if (this.scriptBackup) {
-                // 恢复备份数据
-                const index = this.scripts.findIndex(s => s.id === script.id);
-                if (index !== -1) {
-                    this.scripts[index] = {...this.scriptBackup, editing: false};
-                }
+// 添加一个专门用于保存脚本名称的函数
+        saveScriptName(script) {
+            // 如果名称为空，设置一个默认名称
+            if (!script.name || script.name.trim() === '') {
+                script.name = '未命名脚本';
             }
 
-            // 清除备份和当前编辑脚本
-            this.scriptBackup = null;
+            // 保存脚本
+            this.saveScript(script);
+        },
+        // 开始编辑脚本名称
+        // 开始编辑脚本名称 (Vue 3版本)
+        startEditName(script, event) {
+            // 防止事件冒泡
+            if (event) {
+                event.stopPropagation();
+            }
 
-            // 延迟设置currentScript为null，确保对话框已完全关闭
-            setTimeout(() => {
-                this.currentScript = null;
-            }, 100);
+            // 标记为名称编辑状态
+            script.nameEditing = true;
+
+            // 在下一个DOM更新周期后聚焦输入框
+            this.$nextTick(() => {
+                const inputs = this.$refs.nameInput;
+                if (inputs && inputs.length) {
+                    // 找到对应的输入框并聚焦
+                    for (const input of inputs) {
+                        if (input.$el.closest('tr').contains(event.target)) {
+                            input.focus();
+                            break;
+                        }
+                    }
+                }
+            });
+        },
+
+// 完成编辑脚本名称
+        finishEditName(script) {
+            // 如果名称为空，设置默认名称
+            if (!script.name || script.name.trim() === '') {
+                script.name = '未命名脚本';
+            }
+
+            // 取消名称编辑状态
+            script.nameEditing = false;
+
+            // 保存脚本
+            this.saveScript(script);
+        },
+        // 取消编辑
+        cancelEdit(script) {
+            // 如果有备份，恢复名称
+            if (this.scriptBackup && script.id === this.scriptBackup.id) {
+                script.name = this.scriptBackup.name;
+            }
+
+            // 移除编辑状态
+            script.editing = false;
         },
 
         // 删除脚本

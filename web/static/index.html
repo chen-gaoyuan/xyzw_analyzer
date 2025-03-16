@@ -108,7 +108,7 @@
                                 <template #reference>
                                     <el-button type="warning">
                                         <el-icon><Warning/></el-icon>
-                                         {{ excludedCommands.length }}
+                                          排除（{{ excludedCommands.length }}）
                                     </el-button>
                                 </template>
 
@@ -313,14 +313,21 @@
             <el-table :data="scripts" style="width: 100%" v-loading="scriptsLoading">
                 <el-table-column prop="name" label="脚本名称" min-width="150">
                     <template #default="scope">
-                        <el-input
-                                v-if="scope.row.editing"
-                                v-model="scope.row.name"
-                                placeholder="请输入脚本名称"
-                                @blur="saveScriptName(scope.row)"
-                                @keyup.enter="saveScriptName(scope.row)"
-                        ></el-input>
-                        <span v-else>{{ scope.row.name }}</span>
+                        <div class="script-name-container">
+                            <el-input
+                                    v-if="scope.row.nameEditing"
+                                    v-model="scope.row.name"
+                                    placeholder="请输入脚本名称"
+                                    size="small"
+                                    @blur="finishEditName(scope.row)"
+                                    @keyup.enter="finishEditName(scope.row)"
+                                    ref="nameInput"
+                            ></el-input>
+                            <div v-else class="script-name-display" @click="startEditName(scope.row, $event)">
+                                <span>{{ scope.row.name }}</span>
+                                <el-icon class="edit-name-icon"><Edit /></el-icon>
+                            </div>
+                        </div>
                     </template>
                 </el-table-column>
 
