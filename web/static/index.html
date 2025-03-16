@@ -14,7 +14,7 @@
     <script src="//cdn.jsdelivr.net/npm/element-plus"></script>
     <script src="//cdn.jsdelivr.net/npm/@element-plus/icons-vue"></script>
 
-
+    <script src="https://cdn.jsdelivr.net/npm/js-beautify@1.14.7/js/lib/beautify.js"></script>
     <!-- 自定义样式 -->
     <link rel="stylesheet" href="css/styles.css">
 </head>
@@ -353,30 +353,91 @@
         </div>
 
         <!-- 脚本编辑对话框 -->
+        <!-- 脚本编辑对话框 -->
         <el-dialog
                 v-model="scriptEditVisible"
                 title="编辑脚本内容"
                 width="80%"
                 append-to-body
                 :close-on-click-modal="false"
+                :destroy-on-close="false"
         >
             <div class="script-editor-container" v-if="currentScript">
-                <el-form>
-                    <el-form-item>
-                        <el-input
-                                v-model="currentScript.content"
-                                type="textarea"
-                                :rows="15"
-                                placeholder="请输入脚本内容（JavaScript代码）"
-                                resize="none"
-                        ></el-input>
-                    </el-form-item>
-                </el-form>
+                <el-tabs v-model="scriptEditActiveTab" class="script-edit-tabs">
+                    <el-tab-pane label="脚本编辑" name="editor">
+                        <div class="code-editor-container">
+                            <el-input
+                                    v-model="editorContent"
+                                    type="textarea"
+                                    :rows="20"
+                                    class="code-editor"
+                                    resize="none"
+                                    spellcheck="false"
+                                    font-family="monospace"
+                            ></el-input>
+                        </div>
+                    </el-tab-pane>
+                    <el-tab-pane label="使用说明" name="help">
+                        <div class="script-help-container">
+                            <el-card class="script-help-card">
+                                <template #header>
+                                    <div class="script-help-header">
+                                        <span>脚本编写指南</span>
+                                    </div>
+                                </template>
+                                <div class="script-help-content">
+                                    <h3>基本用法</h3>
+                                    <p>脚本将在接收到服务器消息时自动执行。您可以定义一个 <code>process(messageData)</code> 函数来处理消息数据。</p>
+
+                                    <h3>可用工具函数</h3>
+                                    <ul>
+                                        <li><code>log(message)</code>: 输出日志到控制台</li>
+                                        <li><code>notify(message, type)</code>: 发送通知，type 可以是 'info', 'success', 'warning', 'error'</li>
+                                    </ul>
+
+                                    <h3>示例代码</h3>
+                                    <pre class="script-example-code">
+// 定义一个处理函数，接收消息数据作为参数
+function process(messageData) {
+    // 获取消息命令
+    const cmd = messageData.cmd;
+
+    // 根据不同的命令执行不同的操作
+    if (cmd === '某个特定命令') {
+        // 处理特定命令的逻辑
+        log('收到特定命令: ' + cmd);
+
+        // 可以访问消息的所有字段
+        if (messageData.data && messageData.data.someField) {
+            notify('发现特定字段: ' + messageData.data.someField, 'success');
+        }
+
+        // 返回处理结果（可选）
+        return '处理完成';
+    }
+
+    // 可以处理所有类型的消息
+    log('收到消息: ' + cmd);
+}
+                            </pre>
+
+                                    <h3>高级用法</h3>
+                                    <p>您可以在脚本中定义多个函数，但只有 <code>process</code> 函数会被自动调用。</p>
+                                    <p>脚本执行环境是安全的沙箱，无法直接访问页面 DOM，但可以通过 <code>notify</code> 函数与用户交互。</p>
+                                </div>
+                            </el-card>
+                        </div>
+                    </el-tab-pane>
+                </el-tabs>
             </div>
             <template #footer>
         <span class="dialog-footer">
-            <el-button @click="scriptEditVisible = false">取消</el-button>
+            <el-button @click="cancelScriptEdit">取消</el-button>
             <el-button type="primary" @click="saveScriptContent">保存</el-button>
+            <el-button type="success" @click="formatScriptCode">
+                <el-icon><Magic /></el-icon>
+                格式化代码
+            </el-button>
         </span>
             </template>
         </el-dialog>

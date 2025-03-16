@@ -1,3 +1,4 @@
+const {toRaw} = Vue;
 // 创建Vue应用
 const App = {
     data() {
@@ -37,6 +38,9 @@ const App = {
             currentScript: null,          // 当前编辑的脚本
             scriptsLoading: false,        // 脚本加载状态
             scriptBackup: null,           // 脚本编辑备份
+            // monacoEditor: null,        // 移除 Monaco 编辑器实例
+            scriptEditActiveTab: 'editor', // 脚本编辑当前激活的 Tab
+            editorContent: '',            // 编辑器内容
         };
     },
 // 添加watch监听noteDialogVisible的变化
@@ -48,7 +52,8 @@ const App = {
                     this.addJsonKeyClickHandlers();
                 });
             }
-        }
+        },
+
     },
     computed: {
         // 连接状态类型
@@ -102,11 +107,15 @@ const App = {
         this.loadNotes();
         // 加载排除命令列表
         this.loadExcludedCommands();
+
+        this.loadScripts();
     },
 
     beforeUnmount() {
+
         // 组件卸载前关闭WebSocket连接
         this.closeWebSocket();
+
     },
 
     methods: {
@@ -197,12 +206,93 @@ const App = {
                 if (this.messages.length > this.maxMessages) {
                     this.messages = this.messages.slice(0, this.maxMessages);
                 }
+
+                // 如果是服务器发来的消息，执行启用的脚本
+                if (message.call === 'server') {
+                    if (!this.excludedCommands.includes(parsedMsg.cmd)) {
+                        this.executeScripts(parsedMsg);
+                    }
+                }
             } catch (e) {
                 console.error('消息处理错误:', e);
                 this.$message.error('消息处理错误: ' + e.message);
             }
         },
+        executeScripts(messageData) {
+            // 只执行已启用的脚本
+            const enabledScripts = this.scripts.filter(script => script.enabled);
 
+            if (enabledScripts.length === 0) return;
+
+            // 为每个脚本创建一个安全的执行环境
+            enabledScripts.forEach(script => {
+                try {
+                    // 创建一个函数，接收消息数据作为参数
+                    const scriptFunction = this.createScriptFunction(script.content);
+
+                    // 执行脚本函数
+                    const result = scriptFunction(messageData);
+
+                    // 如果脚本有返回值，可以在控制台输出
+                    if (result !== undefined) {
+                        console.log(`脚本 "${script.name}" 执行结果:`, result);
+                    }
+                } catch (error) {
+                    console.error(`脚本 "${script.name}" 执行错误:`, error);
+                    // 可以选择是否通知用户脚本执行错误
+                    this.$message.error(`脚本 "${script.name}" 执行错误: ${error.message}`);
+                }
+            });
+        },
+        // 创建脚本函数
+        createScriptFunction(scriptContent) {
+            try {
+                // 创建一个安全的执行环境
+                // 传入 messageData 作为参数，并提供一些有用的工具函数
+                const functionBody = `
+            "use strict";
+            // 提供一些工具函数
+            const log = function(message) { 
+                console.log("[脚本日志]", message); 
+                return message;
+            };
+            
+            const notify = function(message, type = 'info') {
+                if (type === 'success') {
+                    app.$message.success(message);
+                } else if (type === 'warning') {
+                    app.$message.warning(message);
+                } else if (type === 'error') {
+                    app.$message.error(message);
+                } else {
+                    app.$message.info(message);
+                }
+                return message;
+            };
+            
+            // 执行用户脚本
+            try {
+                ${scriptContent}
+                
+                // 如果脚本中定义了 process 函数，则调用它
+                if (typeof process === 'function') {
+                    return process(messageData);
+                }
+                
+                return undefined;
+            } catch (e) {
+                console.error("脚本执行错误:", e);
+                throw e;
+            }
+        `;
+
+                // 创建函数
+                return new Function('messageData', functionBody);
+            } catch (error) {
+                console.error("创建脚本函数错误:", error);
+                throw error;
+            }
+        },
         // 切换消息展开/折叠状态
         toggleExpand(message) {
             message.expanded = !message.expanded;
@@ -265,7 +355,7 @@ const App = {
             try {
                 const jsonObj = {};
                 jsonObj.cmd = this.currentMessage.parsedMsg.cmd;
-                jsonObj.data=JSON.parse(this.debugContent)
+                jsonObj.data = JSON.parse(this.debugContent)
                 // 发送到后端队列
                 fetch('/api/debug/send', {
                     method: 'POST',
@@ -816,7 +906,29 @@ const App = {
             const newScript = {
                 id: '',
                 name: '新脚本',
-                content: '// 在这里编写您的JavaScript代码\n// 例如：\nconsole.log("Hello, World!");',
+                content: `// 这是一个示例脚本
+// 定义一个处理函数，接收消息数据作为参数
+function process(messageData) {
+  // 获取消息命令
+  const cmd = messageData.cmd;
+  
+  // 根据不同的命令执行不同的操作
+  if (cmd === '某个特定命令') {
+    // 处理特定命令的逻辑
+    log('收到特定命令: ' + cmd);
+    
+    // 可以访问消息的所有字段
+    if (messageData.data && messageData.data.someField) {
+      notify('发现特定字段: ' + messageData.data.someField, 'success');
+    }
+    
+    // 返回处理结果（可选）
+    return '处理完成';
+  }
+  
+  // 可以处理所有类型的消息
+  log('收到消息: ' + cmd);
+}`,
                 enabled: false,
                 createdAt: new Date().toISOString(),
                 editing: true
@@ -826,6 +938,7 @@ const App = {
             this.editScript(newScript);
         },
 
+
         // 编辑脚本
         editScript(script) {
             // 备份脚本，以便取消编辑时恢复
@@ -834,21 +947,58 @@ const App = {
             // 标记为编辑状态
             script.editing = true;
 
+            // 设置编辑器内容
+            this.editorContent = script.content || '';
+
             // 打开编辑对话框
             this.currentScript = script;
+            this.scriptEditActiveTab = 'editor'; // 默认打开编辑器标签页
             this.scriptEditVisible = true;
         },
 
         // 保存脚本内容
         saveScriptContent() {
+            // 直接从 editorContent 获取内容
+            if (this.currentScript) {
+                this.currentScript.content = this.editorContent;
+            }
+
             this.scriptEditVisible = false;
-            // 内容已经通过v-model绑定到currentScript.content
+            this.saveScript(this.currentScript);
         },
+// 取消编辑
+        cancelScriptEdit() {
+            this.scriptEditVisible = false;
+
+            if (this.currentScript.id === '') {
+                // 如果是新创建的脚本，直接从列表中移除
+                const index = this.scripts.findIndex(s => s === this.currentScript);
+                if (index !== -1) {
+                    this.scripts.splice(index, 1);
+                }
+            } else if (this.scriptBackup) {
+                // 恢复备份数据
+                const index = this.scripts.findIndex(s => s.id === this.currentScript.id);
+                if (index !== -1) {
+                    this.scripts[index] = { ...this.scriptBackup, editing: false };
+                }
+            }
+
+            // 清除备份和当前编辑脚本
+            this.scriptBackup = null;
+            this.editorContent = '';
+
+            // 延迟设置currentScript为null，确保对话框已完全关闭
+            setTimeout(() => {
+                this.currentScript = null;
+            }, 100);
+        },
+
 
         // 保存脚本
         saveScript(script) {
             // 移除编辑状态标记
-            const scriptToSave = { ...script };
+            const scriptToSave = {...script};
             delete scriptToSave.editing;
 
             fetch('/api/scripts/save', {
@@ -870,9 +1020,9 @@ const App = {
                     // 更新脚本列表中的数据
                     const index = this.scripts.findIndex(s => s.id === data.id);
                     if (index !== -1) {
-                        this.scripts[index] = { ...data, editing: false };
+                        this.scripts[index] = {...data, editing: false};
                     } else {
-                        this.scripts.unshift({ ...data, editing: false });
+                        this.scripts.unshift({...data, editing: false});
                     }
                 })
                 .catch(error => {
@@ -896,7 +1046,7 @@ const App = {
                 // 恢复备份数据
                 const index = this.scripts.findIndex(s => s.id === script.id);
                 if (index !== -1) {
-                    this.scripts[index] = { ...this.scriptBackup, editing: false };
+                    this.scripts[index] = {...this.scriptBackup, editing: false};
                 }
             }
 
@@ -921,7 +1071,7 @@ const App = {
                     headers: {
                         'Content-Type': 'application/json'
                     },
-                    body: JSON.stringify({ id: script.id })
+                    body: JSON.stringify({id: script.id})
                 })
                     .then(response => {
                         if (!response.ok) {
@@ -949,7 +1099,7 @@ const App = {
 
         // 切换脚本启用状态
         toggleScriptStatus(script) {
-            const scriptToSave = { ...script };
+            const scriptToSave = {...script};
             delete scriptToSave.editing;
 
             fetch('/api/scripts/save', {
@@ -984,6 +1134,21 @@ const App = {
             return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')} ${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}:${String(date.getSeconds()).padStart(2, '0')}`;
         },
 
+        // 格式化代码
+        formatScriptCode() {
+            try {
+                // 简单的 JavaScript 格式化
+                const js_beautify = window.js_beautify || function(code) { return code; };
+                this.editorContent = js_beautify(this.editorContent, {
+                    indent_size: 2,
+                    space_in_empty_paren: true
+                });
+                this.$message.success('代码格式化成功');
+            } catch (error) {
+                console.error('格式化错误:', error);
+                this.$message.error('代码格式化失败: ' + error.message);
+            }
+        },
     }
 };
 

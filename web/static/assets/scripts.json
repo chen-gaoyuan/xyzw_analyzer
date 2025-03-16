@@ -1,12 +1,12 @@
 {
   "scripts": [
     {
-      "id": "20250316160750",
+      "id": "20250316163108",
       "name": "测试脚本",
-      "content": "// 在这里编写您的JavaScript代码\n// 例如：\nconsole.log(\"Hello, World!\");",
+      "content": "// 这是一个示例脚本\n// 定义一个处理函数，接收消息数据作为参数\nfunction process(messageData) {\n    // 获取消息命令\n    const cmd = messageData.cmd;\n \n    // 可以处理所有类型的消息\n    log('收到消息: ' + cmd);\n}\n\n// 也可以定义其他辅助函数\nfunction someHelperFunction() {\n    // ...\n}",
       "enabled": true,
-      "createdAt": "2025-03-16T16:07:50.7359902+08:00",
-      "updatedAt": "2025-03-16T16:15:53.8839743+08:00"
+      "createdAt": "2025-03-16T16:31:08.6855412+08:00",
+      "updatedAt": "2025-03-16T17:10:59.6697892+08:00"
     }
   ]
 }

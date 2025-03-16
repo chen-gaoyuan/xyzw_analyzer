@@ -1202,3 +1202,134 @@ body {
   word-break: break-word;
 }
 
+/* 脚本管理相关样式 */
+.script-manager-container {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.script-list-header {
+  margin-bottom: 15px;
+  display: flex;
+  justify-content: space-between;
+}
+
+.script-editor-container {
+  height: 100%;
+  min-height: 500px;
+}
+
+.script-dialog .el-dialog__body {
+  padding-top: 10px;
+}
+
+/* Monaco 编辑器容器 */
+.monaco-editor-container {
+  height: 500px;
+  border: 1px solid #dcdfe6;
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+/* 脚本编辑 Tab 样式 */
+.script-edit-tabs {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.script-edit-tabs .el-tabs__content {
+  flex: 1;
+  overflow: hidden;
+  padding: 15px 0;
+}
+
+.script-edit-tabs .el-tab-pane {
+  height: 100%;
+}
+
+/* 脚本帮助样式 */
+.script-help-container {
+  padding: 0 15px;
+}
+
+.script-help-card {
+  margin-bottom: 20px;
+}
+
+.script-help-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.script-help-content {
+  line-height: 1.6;
+  color: #606266;
+}
+
+.script-help-content h3 {
+  margin: 16px 0 8px;
+  color: #303133;
+  font-size: 16px;
+}
+
+.script-help-content p {
+  margin: 8px 0;
+}
+
+.script-help-content ul {
+  padding-left: 20px;
+  margin: 8px 0;
+}
+
+.script-help-content code {
+  background-color: #f5f7fa;
+  border-radius: 3px;
+  padding: 2px 4px;
+  color: #c7254e;
+  font-family: Consolas, Monaco, monospace;
+}
+
+.script-example-code {
+  background-color: #f5f7fa;
+  border-radius: 4px;
+  padding: 15px;
+  margin: 10px 0;
+  font-family: Consolas, Monaco, monospace;
+  font-size: 13px;
+  line-height: 1.5;
+  color: #333;
+  overflow: auto;
+  border: 1px solid #ebeef5;
+}
+
+/* 表格样式优化 */
+.el-table .cell {
+  word-break: break-word;
+}
+/* 替换 Monaco 编辑器容器样式 */
+.code-editor-container {
+  height: 500px;
+  border: 1px solid #dcdfe6;
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.code-editor {
+  height: 100%;
+  font-family: Consolas, Monaco, 'Andale Mono', 'Ubuntu Mono', monospace;
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.code-editor .el-textarea__inner {
+  height: 100%;
+  padding: 10px;
+  font-family: inherit;
+  font-size: inherit;
+  line-height: inherit;
+  color: #333;
+  background-color: #f5f7fa;
+}
