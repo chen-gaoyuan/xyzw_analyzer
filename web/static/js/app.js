@@ -38,9 +38,8 @@ const App = {
             currentScript: null,          // 当前编辑的脚本
             scriptsLoading: false,        // 脚本加载状态
             scriptBackup: null,           // 脚本编辑备份
-            // monacoEditor: null,        // 移除 Monaco 编辑器实例
+            monacoEditor: null,           // Monaco 编辑器实例
             scriptEditActiveTab: 'editor', // 脚本编辑当前激活的 Tab
-            editorContent: '',            // 编辑器内容
         };
     },
 // 添加watch监听noteDialogVisible的变化
@@ -53,6 +52,14 @@ const App = {
                 });
             }
         },
+        scriptEditVisible(newVal) {
+            if (newVal) {
+                // 当对话框打开时，初始化编辑器
+                this.$nextTick(() => {
+                    this.initMonacoEditor();
+                });
+            }
+        }
 
     },
     computed: {
@@ -109,10 +116,20 @@ const App = {
         this.loadExcludedCommands();
 
         this.loadScripts();
+        window.ElMessage = ElementPlus.ElMessage;
+
     },
 
     beforeUnmount() {
-
+        const editor = Vue.toRaw(this.monacoEditor);
+        if (editor && typeof editor.dispose === 'function') {
+            try {
+                editor.dispose();
+            } catch (e) {
+                console.error('销毁编辑器错误:', e);
+            }
+        }
+        this.monacoEditor = null;
         // 组件卸载前关闭WebSocket连接
         this.closeWebSocket();
 
@@ -258,14 +275,15 @@ const App = {
             };
             
             const notify = function(message, type = 'info') {
+                // 使用全局的 ElMessage 而不是 app.$message
                 if (type === 'success') {
-                    app.$message.success(message);
+                    window.ElMessage.success(message);
                 } else if (type === 'warning') {
-                    app.$message.warning(message);
+                    window.ElMessage.warning(message);
                 } else if (type === 'error') {
-                    app.$message.error(message);
+                    window.ElMessage.error(message);
                 } else {
-                    app.$message.info(message);
+                    window.ElMessage.info(message);
                 }
                 return message;
             };
@@ -947,27 +965,121 @@ function process(messageData) {
             // 标记为编辑状态
             script.editing = true;
 
-            // 设置编辑器内容
-            this.editorContent = script.content || '';
-
             // 打开编辑对话框
             this.currentScript = script;
             this.scriptEditActiveTab = 'editor'; // 默认打开编辑器标签页
             this.scriptEditVisible = true;
         },
+// 初始化代码编辑器
+        initMonacoEditor() {
+            this.$nextTick(() => {
+                // 如果编辑器已存在，先销毁它
+                const editor = Vue.toRaw(this.monacoEditor);
+                if (editor && typeof editor.dispose === 'function') {
+                    try {
+                        editor.dispose();
+                    } catch (e) {
+                        console.error('销毁旧编辑器错误:', e);
+                    }
+                    this.monacoEditor = null;
+                }
+
+                // 配置 Monaco 编辑器加载器
+                require.config({ paths: { 'vs': 'https://cdn.jsdelivr.net/npm/monaco-editor@0.43.0/min/vs' }});
+
+                // 加载编辑器
+                require(['vs/editor/editor.main'], () => {
+                    try {
+                        const editorElement = document.getElementById('monaco-editor');
+                        if (!editorElement) {
+                            console.error('无法找到编辑器DOM元素');
+                            return;
+                        }
+
+                        this.monacoEditor = monaco.editor.create(editorElement, {
+                            value: this.currentScript.content || '',
+                            language: 'javascript',
+                            theme: 'vs',
+                            automaticLayout: true,
+                            // 其他配置保持不变
+                        });
+
+                        // 添加快捷键支持
+                        this.monacoEditor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyS, () => {
+                            this.saveScriptContent();
+                        });
+
+                        this.monacoEditor.addCommand(monaco.KeyMod.Alt | monaco.KeyCode.KeyF, () => {
+                            this.formatScriptCode();
+                        });
+                    } catch (e) {
+                        console.error('创建编辑器错误:', e);
+                        this.$message.error('创建编辑器失败: ' + e.message);
+                    }
+                });
+            });
+        },
+        formatScriptCode() {
+            if (!this.monacoEditor) return;
+
+            try {
+                const editor = Vue.toRaw(this.monacoEditor);
+                editor.getAction('editor.action.formatDocument').run().then(() => {
+                    this.$message.success('代码格式化成功');
+                }).catch(err => {
+                    console.error('格式化错误:', err);
+                    this.$message.error('代码格式化失败');
+                });
+            } catch (e) {
+                console.error('格式化操作错误:', e);
+                this.$message.error('格式化操作失败');
+            }
+        },
 
         // 保存脚本内容
         saveScriptContent() {
-            // 直接从 editorContent 获取内容
-            if (this.currentScript) {
-                this.currentScript.content = this.editorContent;
-            }
+            // 使用延时操作可以避免性能问题
+            setTimeout(() => {
+                if (this.monacoEditor) {
+                    try {
+                        const editor = Vue.toRaw(this.monacoEditor);
+                        this.currentScript.content = editor.getValue();
 
-            this.scriptEditVisible = false;
-            this.saveScript(this.currentScript);
+                        // 销毁编辑器实例
+                        if (editor && typeof editor.dispose === 'function') {
+                            try {
+                                editor.dispose();
+                            } catch (e) {
+                                console.error('销毁编辑器错误:', e);
+                            }
+                        }
+                        this.monacoEditor = null;
+
+                        this.scriptEditVisible = false;
+                        this.saveScript(this.currentScript);
+                    } catch (e) {
+                        console.error('获取编辑器内容错误:', e);
+                        this.$message.error('获取编辑器内容失败');
+                    }
+                } else {
+                    this.scriptEditVisible = false;
+                    this.saveScript(this.currentScript);
+                }
+            }, 10);
         },
 // 取消编辑
         cancelScriptEdit() {
+            // 销毁编辑器实例
+            const editor = Vue.toRaw(this.monacoEditor);
+            if (editor && typeof editor.dispose === 'function') {
+                try {
+                    editor.dispose();
+                } catch (e) {
+                    console.error('销毁编辑器错误:', e);
+                }
+            }
+            this.monacoEditor = null;
+
             this.scriptEditVisible = false;
 
             if (this.currentScript.id === '') {
@@ -986,7 +1098,6 @@ function process(messageData) {
 
             // 清除备份和当前编辑脚本
             this.scriptBackup = null;
-            this.editorContent = '';
 
             // 延迟设置currentScript为null，确保对话框已完全关闭
             setTimeout(() => {
@@ -1134,21 +1245,7 @@ function process(messageData) {
             return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')} ${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}:${String(date.getSeconds()).padStart(2, '0')}`;
         },
 
-        // 格式化代码
-        formatScriptCode() {
-            try {
-                // 简单的 JavaScript 格式化
-                const js_beautify = window.js_beautify || function(code) { return code; };
-                this.editorContent = js_beautify(this.editorContent, {
-                    indent_size: 2,
-                    space_in_empty_paren: true
-                });
-                this.$message.success('代码格式化成功');
-            } catch (error) {
-                console.error('格式化错误:', error);
-                this.$message.error('代码格式化失败: ' + error.message);
-            }
-        },
+
     }
 };
 

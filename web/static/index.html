@@ -14,7 +14,9 @@
     <script src="//cdn.jsdelivr.net/npm/element-plus"></script>
     <script src="//cdn.jsdelivr.net/npm/@element-plus/icons-vue"></script>
 
-    <script src="https://cdn.jsdelivr.net/npm/js-beautify@1.14.7/js/lib/beautify.js"></script>
+    <!-- 引入 Monaco Editor -->
+    <script src="https://cdn.jsdelivr.net/npm/monaco-editor@0.43.0/min/vs/loader.js"></script>
+
     <!-- 自定义样式 -->
     <link rel="stylesheet" href="css/styles.css">
 </head>
@@ -352,7 +354,7 @@
             </el-table>
         </div>
 
-        <!-- 脚本编辑对话框 -->
+
         <!-- 脚本编辑对话框 -->
         <el-dialog
                 v-model="scriptEditVisible"
@@ -365,17 +367,7 @@
             <div class="script-editor-container" v-if="currentScript">
                 <el-tabs v-model="scriptEditActiveTab" class="script-edit-tabs">
                     <el-tab-pane label="脚本编辑" name="editor">
-                        <div class="code-editor-container">
-                            <el-input
-                                    v-model="editorContent"
-                                    type="textarea"
-                                    :rows="20"
-                                    class="code-editor"
-                                    resize="none"
-                                    spellcheck="false"
-                                    font-family="monospace"
-                            ></el-input>
-                        </div>
+                        <div class="monaco-editor-container" id="monaco-editor"></div>
                     </el-tab-pane>
                     <el-tab-pane label="使用说明" name="help">
                         <div class="script-help-container">

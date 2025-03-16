@@ -1225,6 +1225,29 @@ body {
 }
 
 /* Monaco 编辑器容器 */
+/* 脚本管理相关样式 */
+.script-manager-container {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.script-list-header {
+  margin-bottom: 15px;
+  display: flex;
+  justify-content: space-between;
+}
+
+.script-editor-container {
+  height: 100%;
+  min-height: 500px;
+}
+
+.script-dialog .el-dialog__body {
+  padding-top: 10px;
+}
+
+/* Monaco 编辑器容器 */
 .monaco-editor-container {
   height: 500px;
   border: 1px solid #dcdfe6;
@@ -1252,6 +1275,8 @@ body {
 /* 脚本帮助样式 */
 .script-help-container {
   padding: 0 15px;
+  height: 500px;
+  overflow-y: auto;
 }
 
 .script-help-card {
@@ -1308,28 +1333,4 @@ body {
 /* 表格样式优化 */
 .el-table .cell {
   word-break: break-word;
-}
-/* 替换 Monaco 编辑器容器样式 */
-.code-editor-container {
-  height: 500px;
-  border: 1px solid #dcdfe6;
-  border-radius: 4px;
-  overflow: hidden;
-}
-
-.code-editor {
-  height: 100%;
-  font-family: Consolas, Monaco, 'Andale Mono', 'Ubuntu Mono', monospace;
-  font-size: 14px;
-  line-height: 1.5;
-}
-
-.code-editor .el-textarea__inner {
-  height: 100%;
-  padding: 10px;
-  font-family: inherit;
-  font-size: inherit;
-  line-height: inherit;
-  color: #333;
-  background-color: #f5f7fa;
 }
