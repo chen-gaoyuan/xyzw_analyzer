@@ -22,10 +22,6 @@ type Scripts struct {
 	Scripts []Script `json:"scripts"`
 }
 
-var (
-	scriptsFilePath = "./web/static/assets/scripts.json" // 脚本数据文件路径
-)
-
 // 保存脚本数据到文件
 func saveScripts(scripts Scripts) error {
 	data, err := json.MarshalIndent(scripts, "", "  ")

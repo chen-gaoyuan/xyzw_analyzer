@@ -3,7 +3,6 @@ package proxy
 import (
 	"encoding/hex"
 	gamemitm "github.com/husanpao/game-mitm"
-	"github.com/husanpao/game-mitm/cert"
 	"strings"
 	"xyzw_study/internal/crypto/bon"
 )
@@ -31,12 +30,7 @@ type PacketHandler func(packet GamePacket)
 
 // StartCapture 开始捕获游戏数据包
 func StartCapture(handler PacketHandler) {
-	ca, err := cert.LoadOrCreateCA("./configs/ca")
-	if err != nil {
-		panic(err)
-	}
 	proxy := gamemitm.NewProxy()
-	proxy.SetCa(ca)
 	proxy.SetVerbose(false)
 	proxy.OnRequest("xxz-xyzw.hortorgames.com").Do(func(body []byte, ctx *gamemitm.ProxyCtx) []byte {
 		if handler == nil {

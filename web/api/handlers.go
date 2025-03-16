@@ -13,10 +13,9 @@ import (
 )
 
 var (
-	notesFilePath = "./web/static/assets/notes.json" // 备注数据文件路径
-	debugQueue    = make(chan DebugMessage, 100)     // 调试消息队列
-	game          *gamemitm.Session
-	sendSeq       float64
+	debugQueue = make(chan DebugMessage, 100) // 调试消息队列
+	game       *gamemitm.Session
+	sendSeq    float64
 )
 
 // Notes 定义备注数据结构
