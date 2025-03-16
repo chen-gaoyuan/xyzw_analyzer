@@ -27,6 +27,16 @@ const App = {
             currentEditingNote: null, // 当前正在编辑的备注对象
             noteDialogVisible: false, // 备注对话框可见性
             noteContent: '',          // 备注内容
+
+            // 脚本日志相关
+            scriptLogs: [],           // 存储脚本日志
+            scriptLogVisible: false,  // 日志窗口可见性
+            scriptLogMinimized: false, // 日志窗口是否最小化
+            scriptLogPosition: { x: 20, y: 100 }, // 日志窗口位置
+            isDraggingLog: false,     // 是否正在拖动日志窗口
+            dragOffset: { x: 0, y: 0 }, // 拖动偏移量
+            maxScriptLogs: 500,       // 最大日志数量
+            scriptLogFilter: "",      // 脚本日志筛选
             // Tab相关
             activeTab: 'detail',
             debugContent: '',
@@ -103,7 +113,23 @@ const App = {
                 return true;
             });
         },
+        filteredScriptLogs() {
+            if (!this.scriptLogFilter) {
+                return this.scriptLogs;
+            }
+            return this.scriptLogs.filter(log => log.script === this.scriptLogFilter);
+        },
 
+        // 获取所有脚本名称（用于筛选）
+        scriptNames() {
+            const names = new Set();
+            this.scriptLogs.forEach(log => {
+                if (log.script) {
+                    names.add(log.script);
+                }
+            });
+            return Array.from(names);
+        },
 
     },
 
@@ -117,7 +143,9 @@ const App = {
 
         this.loadScripts();
         window.ElMessage = ElementPlus.ElMessage;
-
+        window.addScriptLog = (scriptName, message, level) => {
+            this.addScriptLog(scriptName, message, level);
+        };
     },
 
     beforeUnmount() {
@@ -227,7 +255,7 @@ const App = {
                 // 如果是服务器发来的消息，执行启用的脚本
                 if (message.call === 'server') {
                     if (!this.excludedCommands.includes(parsedMsg.cmd)) {
-                        this.executeScripts(parsedMsg);
+                        this.executeScripts(newMessage);
                     }
                 }
             } catch (e) {
@@ -235,47 +263,58 @@ const App = {
                 this.$message.error('消息处理错误: ' + e.message);
             }
         },
-        executeScripts(messageData) {
-            // 只执行已启用的脚本
+        // 执行脚本
+        executeScripts(message) {
+            if (!this.isConnected || !message || !message.parsedMsg) {
+                return;
+            }
+
+            // 只处理服务器发来的消息
+            if (message.call !== 'server') {
+                return;
+            }
+
+            // 获取启用的脚本
             const enabledScripts = this.scripts.filter(script => script.enabled);
+            if (enabledScripts.length === 0) {
+                return;
+            }
 
-            if (enabledScripts.length === 0) return;
-
-            // 为每个脚本创建一个安全的执行环境
-            enabledScripts.forEach(script => {
+            // 执行每个启用的脚本
+            for (const script of enabledScripts) {
                 try {
-                    // 创建一个函数，接收消息数据作为参数
-                    const scriptFunction = this.createScriptFunction(script.content);
+                    // 创建脚本函数，传递脚本名称
+                    const scriptFunction = this.createScriptFunction(script.content, script.name);
 
-                    // 执行脚本函数
-                    const result = scriptFunction(messageData);
+                    // 执行脚本
+                    const result = scriptFunction(message.parsedMsg);
 
-                    // 如果脚本有返回值，可以在控制台输出
                     if (result !== undefined) {
                         console.log(`脚本 "${script.name}" 执行结果:`, result);
                     }
                 } catch (error) {
                     console.error(`脚本 "${script.name}" 执行错误:`, error);
-                    // 可以选择是否通知用户脚本执行错误
                     this.$message.error(`脚本 "${script.name}" 执行错误: ${error.message}`);
                 }
-            });
+            }
         },
         // 创建脚本函数
-        createScriptFunction(scriptContent) {
+        createScriptFunction(scriptContent, scriptName) {
             try {
                 // 创建一个安全的执行环境
                 // 传入 messageData 作为参数，并提供一些有用的工具函数
                 const functionBody = `
             "use strict";
             // 提供一些工具函数
-            const log = function(message) { 
+            const log = function(message,type = 'info') { 
                 console.log("[脚本日志]", message); 
+                // 将日志发送到日志窗口，使用传入的脚本名称
+                window.addScriptLog("${scriptName}", message, type);
                 return message;
             };
             
             const notify = function(message, type = 'info') {
-                // 使用全局的 ElMessage 而不是 app.$message
+                // 使用全局的 ElMessage
                 if (type === 'success') {
                     window.ElMessage.success(message);
                 } else if (type === 'warning') {
@@ -285,6 +324,8 @@ const App = {
                 } else {
                     window.ElMessage.info(message);
                 }
+                // 同时添加到日志，使用传入的脚本名称
+                window.addScriptLog("${scriptName}", message, type);
                 return message;
             };
             
@@ -300,6 +341,7 @@ const App = {
                 return undefined;
             } catch (e) {
                 console.error("脚本执行错误:", e);
+                window.addScriptLog("${scriptName}", "执行错误: " + e.message, 'error');
                 throw e;
             }
         `;
@@ -1245,7 +1287,117 @@ function process(messageData) {
             return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')} ${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}:${String(date.getSeconds()).padStart(2, '0')}`;
         },
 
+// 切换脚本日志窗口显示状态
+        toggleScriptLog() {
+            this.scriptLogVisible = !this.scriptLogVisible;
+            if (this.scriptLogVisible) {
+                // 显示日志窗口时，滚动到底部
+                this.$nextTick(() => {
+                    this.scrollLogToBottom();
+                });
+            }
+        },
 
+// 关闭脚本日志窗口
+        closeScriptLog() {
+            this.scriptLogVisible = false;
+        },
+
+// 最小化/展开脚本日志窗口
+        minimizeScriptLog() {
+            this.scriptLogMinimized = !this.scriptLogMinimized;
+            if (!this.scriptLogMinimized) {
+                // 展开时滚动到底部
+                this.$nextTick(() => {
+                    this.scrollLogToBottom();
+                });
+            }
+        },
+
+// 清空脚本日志
+        clearScriptLogs() {
+            this.scriptLogs = [];
+            this.$message.success('脚本日志已清空');
+        },
+
+// 添加脚本日志
+        addScriptLog(scriptName, message, level = 'info') {
+            // 添加新日志
+            this.scriptLogs.push({
+                timestamp: new Date(),
+                script: scriptName || '未知脚本',
+                message: message,
+                level: level
+            });
+
+            // 限制日志数量
+            if (this.scriptLogs.length > this.maxScriptLogs) {
+                this.scriptLogs = this.scriptLogs.slice(-this.maxScriptLogs);
+            }
+
+            // 如果日志窗口可见且未最小化，滚动到底部
+            if (this.scriptLogVisible && !this.scriptLogMinimized) {
+                this.$nextTick(() => {
+                    this.scrollLogToBottom();
+                });
+            }
+        },
+
+// 滚动日志到底部
+        scrollLogToBottom() {
+            const scrollbar = this.$refs.scriptLogScrollbar;
+            if (scrollbar) {
+                scrollbar.setScrollTop(99999);
+            }
+        },
+
+// 格式化日志时间
+        formatLogTime(timestamp) {
+            const date = new Date(timestamp);
+            const hours = date.getHours().toString().padStart(2, '0');
+            const minutes = date.getMinutes().toString().padStart(2, '0');
+            const seconds = date.getSeconds().toString().padStart(2, '0');
+            const milliseconds = date.getMilliseconds().toString().padStart(3, '0');
+            return `${hours}:${minutes}:${seconds}.${milliseconds}`;
+        },
+
+// 开始拖动日志窗口
+        startDragScriptLog(event) {
+            // 忽略按钮点击事件
+            if (event.target.tagName === 'BUTTON' || event.target.closest('button')) {
+                return;
+            }
+
+            this.isDraggingLog = true;
+            const rect = event.currentTarget.parentElement.getBoundingClientRect();
+            this.dragOffset = {
+                x: event.clientX - rect.left,
+                y: event.clientY - rect.top
+            };
+
+            // 添加全局事件监听
+            document.addEventListener('mousemove', this.dragScriptLog);
+            document.addEventListener('mouseup', this.stopDragScriptLog);
+        },
+
+// 拖动日志窗口
+        dragScriptLog(event) {
+            if (!this.isDraggingLog) return;
+
+            this.scriptLogPosition = {
+                x: event.clientX - this.dragOffset.x,
+                y: event.clientY - this.dragOffset.y
+            };
+        },
+
+// 停止拖动日志窗口
+        stopDragScriptLog() {
+            this.isDraggingLog = false;
+
+            // 移除全局事件监听
+            document.removeEventListener('mousemove', this.dragScriptLog);
+            document.removeEventListener('mouseup', this.stopDragScriptLog);
+        },
     }
 };
 

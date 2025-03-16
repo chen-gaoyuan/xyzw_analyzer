@@ -1334,3 +1334,168 @@ body {
 .el-table .cell {
   word-break: break-word;
 }
+
+/* 脚本日志窗口样式 */
+.script-log-window {
+  position: fixed;
+  width: 500px;
+  min-height: 40px;
+  max-height: 400px;
+  background-color: #fff;
+  border-radius: 4px;
+  box-shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.1);
+  z-index: 2000;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  border: 1px solid #dcdfe6;
+}
+
+.script-log-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 12px;
+  background-color: #f5f7fa;
+  cursor: move;
+  user-select: none;
+  border-bottom: 1px solid #e4e7ed;
+}
+
+.script-log-title {
+  font-weight: bold;
+  font-size: 14px;
+  color: #303133;
+}
+
+.script-log-actions {
+  display: flex;
+  gap: 4px;
+}
+
+.script-log-content {
+  flex: 1;
+  height: 300px;
+  overflow: hidden;
+}
+
+.script-log-entries {
+  padding: 8px 12px;
+}
+
+.script-log-entry {
+  margin-bottom: 4px;
+  font-family: monospace;
+  font-size: 12px;
+  line-height: 1.5;
+  white-space: pre-wrap;
+  word-break: break-all;
+}
+
+.script-log-time {
+  color: #909399;
+  margin-right: 6px;
+}
+
+.script-log-script {
+  color: #409eff;
+  margin-right: 6px;
+  font-weight: bold;
+}
+
+.script-log-message {
+  color: #606266;
+}
+
+/* 不同级别日志的颜色 */
+.log-level-info .script-log-message {
+  color: #606266;
+}
+
+.log-level-success .script-log-message {
+  color: #67c23a;
+}
+
+.log-level-warning .script-log-message {
+  color: #e6a23c;
+}
+
+.log-level-error .script-log-message {
+  color: #f56c6c;
+}
+
+/* 最小化时的样式 */
+.script-log-window.minimized .script-log-content {
+  display: none;
+}
+
+/* 空日志提示样式 */
+.script-log-entries .el-empty {
+  padding: 20px 0;
+}
+
+/* 确保日志窗口在其他元素之上 */
+.script-log-window {
+  z-index: 2500;
+}
+/* 脚本日志窗口样式 */
+.script-log-window {
+  position: fixed;
+  width: 500px;
+  min-height: 40px;
+  max-height: 400px;
+  background-color: #fff;
+  border-radius: 4px;
+  box-shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.1);
+  z-index: 2000;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  border: 1px solid #dcdfe6;
+}
+
+.script-log-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 12px;
+  background-color: #f5f7fa;
+  cursor: move;
+  user-select: none;
+  border-bottom: 1px solid #e4e7ed;
+  flex-shrink: 0; /* 防止头部被压缩 */
+}
+
+.script-log-title {
+  font-weight: bold;
+  font-size: 14px;
+  color: #303133;
+}
+
+.script-log-actions {
+  display: flex;
+  gap: 4px;
+  align-items: center;
+}
+
+.script-log-content {
+  flex: 1;
+  height: 300px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.script-log-entries {
+  padding: 8px 12px;
+}
+
+/* 确保滚动条正常工作 */
+.el-scrollbar {
+  flex: 1;
+  overflow: auto;
+}
+
+.el-scrollbar__wrap {
+  overflow-x: hidden;
+}

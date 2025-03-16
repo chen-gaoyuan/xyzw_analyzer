@@ -53,6 +53,13 @@
                             </el-icon>
                             清空消息
                         </el-button>
+                        <!-- 添加查看脚本日志按钮 -->
+                        <el-button type="warning" size="small" @click="toggleScriptLog">
+                            <el-icon>
+                                <Document/>
+                            </el-icon>
+                            脚本日志
+                        </el-button>
                     </el-button-group>
                 </div>
             </div>
@@ -310,6 +317,8 @@
                                 v-if="scope.row.editing"
                                 v-model="scope.row.name"
                                 placeholder="请输入脚本名称"
+                                @blur="saveScriptName(scope.row)"
+                                @keyup.enter="saveScriptName(scope.row)"
                         ></el-input>
                         <span v-else>{{ scope.row.name }}</span>
                     </template>
@@ -434,6 +443,51 @@ function process(messageData) {
             </template>
         </el-dialog>
     </el-dialog>
+    <div v-if="scriptLogVisible" class="script-log-window" :style="{ top: scriptLogPosition.y + 'px', left: scriptLogPosition.x + 'px' }">
+        <div class="script-log-header" @mousedown="startDragScriptLog">
+            <span class="script-log-title">脚本日志</span>
+            <div class="script-log-actions">
+                <!-- 添加脚本筛选下拉框 -->
+                <el-select
+                        v-model="scriptLogFilter"
+                        placeholder="全部脚本"
+                        size="small"
+                        style="width: 120px; margin-right: 5px;"
+                        @click.stop
+                >
+                    <el-option label="全部脚本" value=""></el-option>
+                    <el-option
+                            v-for="name in scriptNames"
+                            :key="name"
+                            :label="name"
+                            :value="name"
+                    ></el-option>
+                </el-select>
+                <el-button type="primary" size="small" text @click="clearScriptLogs">
+                    <el-icon><Delete/></el-icon>
+                </el-button>
+                <el-button type="primary" size="small" text @click="minimizeScriptLog">
+                    <el-icon v-if="scriptLogMinimized"><Arrow-Up/></el-icon>
+                    <el-icon v-else><Arrow-Down/></el-icon>
+                </el-button>
+                <el-button type="danger" size="small" text @click="closeScriptLog">
+                    <el-icon><Close/></el-icon>
+                </el-button>
+            </div>
+        </div>
+        <div v-show="!scriptLogMinimized" class="script-log-content">
+            <el-scrollbar height="100%" ref="scriptLogScrollbar">
+                <div class="script-log-entries">
+                    <div v-for="(log, index) in filteredScriptLogs" :key="index" class="script-log-entry" :class="'log-level-' + log.level">
+                        <span class="script-log-time">{{ formatLogTime(log.timestamp) }}</span>
+                        <span class="script-log-script">[{{ log.script }}]</span>
+                        <span class="script-log-message">{{ log.message }}</span>
+                    </div>
+                    <el-empty v-if="filteredScriptLogs.length === 0" description="暂无日志"></el-empty>
+                </div>
+            </el-scrollbar>
+        </div>
+    </div>
 </div>
 
 <script src="js/app.js"></script>
