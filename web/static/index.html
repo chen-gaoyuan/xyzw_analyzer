@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>咸鱼之王辅助分析</title>
+    <!-- 引入Vue 3 -->
+    <script src="https://cdn.jsdelivr.net/npm/vue@3.3.4/dist/vue.global.prod.js"></script>
+    <!-- 引入Element Plus -->
+    <link
+            rel="stylesheet"
+            href="//cdn.jsdelivr.net/npm/element-plus/dist/index.css"
+    />
+    <script src="//cdn.jsdelivr.net/npm/element-plus"></script>
+    <script src="//cdn.jsdelivr.net/npm/@element-plus/icons-vue"></script>
+
+
+    <!-- 自定义样式 -->
+    <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+<div id="app">
+    <el-container class="main-container">
+        <!-- 头部 -->
+        <el-header height="auto" class="app-header">
+            <div class="header-content">
+                <h1 class="app-title">咸鱼之王辅助分析</h1>
+                <div class="connection-status">
+                    <el-tag :type="connectionStatusType" size="small" effect="dark">
+                        <el-icon v-if="isConnected">
+                            <Check/>
+                        </el-icon>
+                        <el-icon v-else-if="connectionError">
+                            <WarningFilled/>
+                        </el-icon>
+                        <el-icon v-else>
+                            <Close/>
+                        </el-icon>
+                        {{ connectionStatusText }}
+                    </el-tag>
+                    <el-button-group class="control-buttons">
+                        <el-button type="primary" size="small" @click="reconnect" :loading="connecting">
+                            <el-icon>
+                                <Refresh/>
+                            </el-icon>
+                            {{ connectionButtonText }}
+                        </el-button>
+                        <el-button type="danger" size="small" @click="clearMessages">
+                            <el-icon>
+                                <Delete/>
+                            </el-icon>
+                            清空消息
+                        </el-button>
+                    </el-button-group>
+                </div>
+            </div>
+        </el-header>
+
+        <!-- 主体内容 -->
+        <el-container class="content-container">
+            <!-- 左侧消息列表 -->
+            <el-aside width="40%" class="message-container" >
+                <div class="filter-container">
+                    <el-form :inline="true" size="small">
+                        <el-form-item label="方向">
+                            <el-select v-model="filterDirection" placeholder="消息方向">
+                                <el-option label="全部" value="all"></el-option>
+                                <el-option label="发送" value="client"></el-option>
+                                <el-option label="接收" value="server"></el-option>
+                            </el-select>
+                        </el-form-item>
+                        <el-form-item label="命令">
+                            <el-input v-model="filterCmd" placeholder="命令名称"></el-input>
+                        </el-form-item>
+
+                        <el-form-item>
+                            <el-button type="primary" @click="resetFilters">
+                                <el-icon>
+                                    <Refresh/>
+                                </el-icon>
+                                重置
+                            </el-button>
+                        </el-form-item>
+                        <!-- 优化排除命令管理下拉菜单 -->
+                        <!-- 优化排除命令管理下拉菜单 -->
+                        <el-form-item v-if="excludedCommands.length > 0">
+                            <el-popover
+                                    placement="bottom"
+                                    :width="300"
+                                    trigger="click"
+                                    popper-class="excluded-commands-popover"
+                            >
+                                <template #reference>
+                                    <el-button type="warning">
+                                        <el-icon><Warning/></el-icon>
+                                        已排除 {{ excludedCommands.length }} 种消息
+                                    </el-button>
+                                </template>
+
+                                <div class="excluded-commands-container">
+                                    <div class="excluded-commands-header">
+                                        <span>已排除的命令</span>
+                                        <el-button type="primary" size="small" @click="clearAllExcludes" class="restore-all-btn">
+                                            全部恢复
+                                        </el-button>
+                                    </div>
+                                    <el-scrollbar max-height="300px">
+                                        <div class="excluded-commands-list">
+                                            <div v-for="cmd in excludedCommands" :key="cmd" class="excluded-command-item">
+                                                <span class="excluded-command-name">{{ cmd }}</span>
+                                                <el-button
+                                                        type="primary"
+                                                        size="small"
+                                                        @click="includeCommand(cmd)"
+                                                        class="restore-btn"
+                                                >
+                                                    <el-icon><Refresh-Right/></el-icon>
+                                                    恢复
+                                                </el-button>
+                                            </div>
+                                            <el-empty v-if="excludedCommands.length === 0" description="没有排除的命令"></el-empty>
+                                        </div>
+                                    </el-scrollbar>
+                                </div>
+                            </el-popover>
+                        </el-form-item>
+                    </el-form>
+                </div>
+                <el-scrollbar height="calc(100% - 70px)">
+                    <div class="message-list">
+                        <el-empty v-if="filteredMessages.length === 0" description="暂无消息"></el-empty>
+                        <div
+                                v-for="(message, index) in filteredMessages"
+                                :key="index"
+                                class="message-item"
+                                :class="{ 'is-expanded': message.expanded }"
+                                @click="toggleExpand(message)"
+                        >
+
+                            <!-- 修改消息头部，直接显示备注内容 -->
+                            <div class="message-header">
+                                <div :class="['message-direction', message.call === 'client' ? 'send' : 'receive']">
+                                    {{ getCurrentTime(message.timestamp) }}
+                                    {{ message.call === 'client' ? 'Send:' : 'Receive:' }}
+                                    <span class="cmd-text">{{ message.parsedMsg.cmd }}</span>
+                                    <span v-if="hasCommandNote(message.parsedMsg.cmd)" class="note-tag" @click.stop="openCommandNoteDialog(message)">
+            <el-tooltip :content="'点击编辑备注'" placement="top">
+                <span class="note-content">{{ getCommandNote(message.parsedMsg.cmd) }}</span>
+            </el-tooltip>
+        </span>
+                                    <span v-else class="add-note-btn" @click.stop="openCommandNoteDialog(message)">
+            <el-tooltip content="添加命令备注" placement="top">
+                <el-icon><Edit/></el-icon>
+            </el-tooltip>
+        </span>
+                                </div>
+                                <!-- 在消息操作区域添加排除按钮 -->
+                                <!-- 添加取消排除按钮 -->
+                                <!-- 修改消息操作区域，只保留排除按钮 -->
+                                <div class="message-actions">
+                                    <el-button
+                                            type="primary"
+                                            size="small"
+                                            text
+                                            @click.stop="viewMessageDetail(message)"
+                                    >
+                                        {{ message.call === 'client' ? '调试' : '查看' }}
+                                        <el-icon><Search/></el-icon>
+                                    </el-button>
+                                    <el-button
+                                            type="danger"
+                                            size="small"
+                                            text
+                                            @click.stop="excludeCommand(message.parsedMsg.cmd)"
+                                            title="排除此类消息"
+                                    >排除
+                                        <el-icon><Delete/></el-icon>
+                                    </el-button>
+                                </div>
+                            </div>
+
+                            <!-- 在消息内容中添加键备注功能 -->
+                            <div v-show="message.expanded" class="message-content">
+                                <pre>{{ formatJson(message.parsedMsg) }}</pre>
+                            </div>
+
+
+                        </div>
+                    </div>
+                </el-scrollbar>
+            </el-aside>
+
+
+            <!-- 右侧JSON详情 -->
+            <el-main class="json-detail">
+                <el-tabs v-model="activeTab" class="json-tabs">
+                    <el-tab-pane label="详情" name="detail">
+                        <div class="json-header">
+                            <span class="json-title">{{ jsonTitle }}</span>
+                            <div class="json-actions">
+                                <el-button
+                                        type="primary"
+                                        size="small"
+                                        text
+                                        :disabled="!currentJson"
+                                        @click="copyJson"
+                                >
+                                    <el-icon>
+                                        <DocumentCopy/>
+                                    </el-icon>
+                                    复制
+                                </el-button>
+                            </div>
+                        </div>
+                        <!-- 修改JSON详情视图 -->
+                        <el-scrollbar height="calc(100% - 40px)" class="json-content">
+                            <pre v-if="currentJson" class="json-with-notes"></pre>
+                            <el-empty v-else description="选择消息查看详情"></el-empty>
+                        </el-scrollbar>
+                    </el-tab-pane>
+
+                    <el-tab-pane label="调试" name="debug">
+                        <div class="debug-container">
+                            <div class="debug-header">
+                                <span class="debug-title">调试发送:{{ jsonTitle }}</span>
+                            </div>
+                            <div class="debug-content">
+                                <el-form>
+                                    <el-form-item>
+                                        <el-input
+                                                v-model="debugContent"
+                                                type="textarea"
+                                                :rows="10"
+                                                placeholder="请输入要发送的JSON内容"
+                                                resize="none"
+                                        ></el-input>
+                                    </el-form-item>
+                                    <el-form-item>
+                                        <el-button type="primary" @click="sendDebugMessage" >
+                                            <el-icon><Position/></el-icon>
+                                            发送
+                                        </el-button>
+                                        <el-button @click="formatDebugContent">
+                                            <el-icon><Magic-Stick/></el-icon>
+                                            格式化
+                                        </el-button>
+                                    </el-form-item>
+                                </el-form>
+                            </div>
+                        </div>
+                    </el-tab-pane>
+                </el-tabs>
+            </el-main>
+        </el-container>
+    </el-container>
+    <!-- 添加备注对话框 - 添加note-dialog类 -->
+    <el-dialog
+            v-model="noteDialogVisible"
+            :title="currentEditingNote && currentEditingNote.type === 'command' ? '命令备注' : '键备注'"
+            width="30%"
+            custom-class="note-dialog"
+            :close-on-click-modal="false"
+    >
+        <el-form>
+            <el-form-item>
+                <el-input
+                        v-model="noteContent"
+                        type="textarea"
+                        :rows="5"
+                        placeholder="请输入备注内容"
+                        resize="none"
+                        autofocus
+                ></el-input>
+            </el-form-item>
+        </el-form>
+        <template #footer>
+        <span class="dialog-footer">
+          <el-button @click="noteDialogVisible = false">取消</el-button>
+          <el-button type="primary" @click="saveNote">保存</el-button>
+        </span>
+        </template>
+    </el-dialog>
+</div>
+
+<script src="js/app.js"></script>
+</body>
+</html>

@@ -1,0 +1,39 @@
+{
+  "commandNotes": {
+    "Activity_GetResp": "返回当前活动信息",
+    "BottleHelper_GetInfoResp": "罐子信息返回",
+    "Fight_EndLevelResp": "主线闯关结算结果",
+    "Fight_StartLevelResp": "主线闯关获取当前阵容等信息",
+    "Item_OpenBoxResp": "打开道具",
+    "Role_GetRoleInfoResp": "返回角色信息",
+    "SyncRewardResp": "资源更新返回",
+    "System_NewChatMessageNotify": "聊天消息",
+    "activity_buystoregoods": "活动获取资源",
+    "activity_get": "获取当前活动",
+    "bottlehelper_getinfo": "获取罐子信息",
+    "fight_endlevel": "主线闯关结算",
+    "fight_startlevel": "主线闯关",
+    "item_openpack": "打开道具",
+    "role_getroleinfo": "获取角色信息",
+    "system_buygold": "点金",
+    "system_hangupupgrade": "领取挂机奖励升级",
+    "system_sendchatmessage": "发送聊天消息",
+    "system_sevenreward": "七日签到"
+  },
+  "keyNotes": {
+    "BottleHelper_GetInfoResp": {
+      "body.role.bottleHelpers.bottleHelper.0.bottleType": "金罐子",
+      "body.role.bottleHelpers.bottleHelper.0.obtainCnt": "数量",
+      "body.role.bottleHelpers.bottleHelper.1.bottleType": "银罐子",
+      "body.role.bottleHelpers.bottleHelper.1.obtainCnt": "数量",
+      "body.role.bottleHelpers.bottleHelper.2.bottleType": "木罐子",
+      "body.role.bottleHelpers.bottleHelper.2.obtainCnt": "数量"
+    },
+    "activity_buystoregoods": {
+      "body.activityId": "活动类型 9:黑市"
+    },
+    "role_getroleinfo": {
+      "body.clientVersion": "客户端版本"
+    }
+  }
+}
