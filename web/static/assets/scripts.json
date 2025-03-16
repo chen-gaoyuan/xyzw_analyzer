@@ -1,0 +1,12 @@
+{
+  "scripts": [
+    {
+      "id": "20250316160750",
+      "name": "测试脚本",
+      "content": "// 在这里编写您的JavaScript代码\n// 例如：\nconsole.log(\"Hello, World!\");",
+      "enabled": true,
+      "createdAt": "2025-03-16T16:07:50.7359902+08:00",
+      "updatedAt": "2025-03-16T16:15:53.8839743+08:00"
+    }
+  ]
+}
