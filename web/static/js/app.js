@@ -1036,7 +1036,7 @@ function process(messageData) {
                 }
 
                 // 配置 Monaco 编辑器加载器
-                require.config({ paths: { 'vs': 'https://cdn.jsdelivr.net/npm/monaco-editor@0.43.0/min/vs' }});
+                require.config({ paths: { 'vs': 'https://cdn.staticfile.net/monaco-editor/0.45.0/min/vs' }});
 
                 // 加载编辑器
                 require(['vs/editor/editor.main'], () => {
