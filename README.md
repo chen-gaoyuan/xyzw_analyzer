@@ -3,7 +3,7 @@
 # 咸鱼之王辅助分析工具
 ## 20250525更新:
 - 增加了一个简单的客户端程序，用于测试协议，方便测试协议是否正确。 
-- 下载地址：https://zpoke.lanzouq.com/i6OdO2x6mxna
+- 下载地址：https://zpoke.lanzouq.com/b011lbp6re 密码:81kf
 
 
 
