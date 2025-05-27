@@ -54,6 +54,9 @@ func StartCapture(handler PacketHandler) {
 		if len(body) >= 2 && body[0] == 0x70 && body[1] == 0x78 {
 			msg := bon.DecodeXAsMap(body)
 			var processed []byte
+			if msg["cmd"] == nil {
+				return original
+			}
 			if msg["cmd"].(string) == "_sys/ack" {
 				processed = bon.EncodeReplaceAck(original, seq+1)
 			} else {
@@ -80,6 +83,9 @@ func StartCapture(handler PacketHandler) {
 
 			msg := bon.DecodeXAsMap(body)
 			var processed []byte
+			if msg["cmd"] == nil {
+				return original
+			}
 			if msg["cmd"].(string) == "_sys/ack" {
 				processed = bon.EncodeReplaceAck(original, CurrentSeq())
 			} else {
