@@ -92,6 +92,21 @@ func EncodeAndEncryptX(value interface{}) ([]byte, error) {
 func DecryptXAndDecode(data []byte) (interface{}, error) {
 	return DecryptAndDecode(data, "X")
 }
+
+func EncodeReplaceSeq(data []byte, seq int32) []byte {
+	result, err := DecryptXAndDecode(data)
+	if err != nil || result == nil {
+		return nil
+	}
+	m := result.(map[string]any)
+	m["seq"] = seq
+	bs, err := EncodeAndEncryptX(m)
+	if err != nil {
+		return nil
+	}
+	return bs
+}
+
 func DecodeX(data []byte) string {
 	result, err := DecryptXAndDecode(data)
 	if err != nil || result == nil {

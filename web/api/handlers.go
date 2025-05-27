@@ -15,7 +15,6 @@ import (
 var (
 	debugQueue = make(chan DebugMessage, 100) // 调试消息队列
 	game       *gamemitm.Session
-	sendSeq    float64
 )
 
 // Notes 定义备注数据结构
@@ -126,11 +125,12 @@ func ConsumeDebugQueue() {
 			// 构造消息
 			log.Println("收到调试消息:", msg)
 			if game != nil {
+
 				debugMsg := model.XYMsg{
 					Ack:  0,
 					Body: bon.EncodeToBytes(msg.Data),
 					Cmd:  msg.Cmd,
-					Seq:  int32(sendSeq + 1),
+					Seq:  proxy.NextSeq(),
 					Time: time.Now().UnixMilli(),
 				}
 				bs, err := bon.EncodeAndEncryptX(debugMsg)
@@ -141,6 +141,7 @@ func ConsumeDebugQueue() {
 				} else {
 					HandleGamePacket(proxy.GamePacket{Raw: bs, RawData: bon.DecodeX(bs), Direction: proxy.Send, Session: nil})
 					game.SendBinaryToServer(result)
+
 				}
 			}
 			// 等待2秒
@@ -159,14 +160,6 @@ func HandleGamePacket(packet proxy.GamePacket) {
 	var call string
 	if packet.Direction == proxy.Send {
 		call = "client"
-		var m map[string]interface{}
-		json.Unmarshal([]byte(packet.RawData.(string)), &m)
-		if m["seq"] != nil {
-			tempSeq := m["seq"].(float64) + 1
-			if sendSeq < tempSeq {
-				sendSeq = tempSeq
-			}
-		}
 	} else {
 		call = "server"
 	}
