@@ -86,5 +86,11 @@ A: 理论上支持所有使用HTTP/HTTPS或WebSocket协议通信的网络游戏�
 ## v1.0.3 (2025-03-16)
 - 增加了一个简单的客户端程序，用于测试协议，方便测试协议是否正确。 （是脱机程序，协议分析还是下载Release的）
 - 下载地址：https://zpoke.lanzouq.com/b011lbp6re 密码:81kf
+
+## v1.0.4(2025-05-27)
+- ✨ feat(crypto/bon): 新增序列号替换函数 EncodeReplaceSeq  
+- 🔧 fix(api/handlers): 移除全局 sendSeq 改用 proxy.NextSeq()  
+- ✨ feat(proxy/capture): 实现原子序列号生成及请求体序列号替换  
+- ✅ test(crypto/bon): 添加 EncodeReplaceSeq 测试用例
  
  
