@@ -106,7 +106,32 @@ func EncodeReplaceSeq(data []byte, seq int32) []byte {
 	}
 	return bs
 }
-
+func EncodeReplaceResp(data []byte, seq int32) []byte {
+	result, err := DecryptXAndDecode(data)
+	if err != nil || result == nil {
+		return nil
+	}
+	m := result.(map[string]any)
+	m["resp"] = seq
+	bs, err := EncodeAndEncryptX(m)
+	if err != nil {
+		return nil
+	}
+	return bs
+}
+func EncodeReplaceAck(data []byte, ack int32) []byte {
+	result, err := DecryptXAndDecode(data)
+	if err != nil || result == nil {
+		return nil
+	}
+	m := result.(map[string]any)
+	m["ack"] = ack
+	bs, err := EncodeAndEncryptX(m)
+	if err != nil {
+		return nil
+	}
+	return bs
+}
 func DecodeX(data []byte) string {
 	result, err := DecryptXAndDecode(data)
 	if err != nil || result == nil {
@@ -124,7 +149,14 @@ func DecodeX(data []byte) string {
 	}
 	return string(r)
 }
+func DecodeXAsMap(data []byte) map[string]any {
+	result, err := DecryptXAndDecode(data)
+	if err != nil || result == nil {
+		return nil
+	}
+	return result.(map[string]any)
 
+}
 func DecodeFromBytes(data []byte) interface{} {
 	result, err := _Decode(data)
 	if err != nil {

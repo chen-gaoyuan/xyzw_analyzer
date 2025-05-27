@@ -2,6 +2,7 @@ package api
 
 import (
 	"encoding/json"
+	"fmt"
 	gamemitm "github.com/husanpao/game-mitm"
 	"log"
 	"net/http"
@@ -139,6 +140,8 @@ func ConsumeDebugQueue() {
 				if err != nil {
 					log.Println(err)
 				} else {
+					fmt.Println(debugMsg)
+					fmt.Println(proxy.CurrentSeq())
 					HandleGamePacket(proxy.GamePacket{Raw: bs, RawData: bon.DecodeX(bs), Direction: proxy.Send, Session: nil})
 					game.SendBinaryToServer(result)
 

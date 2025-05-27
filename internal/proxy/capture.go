@@ -1,9 +1,7 @@
 package proxy
 
 import (
-	"encoding/hex"
 	gamemitm "github.com/husanpao/game-mitm"
-	"strings"
 	"sync/atomic"
 	"xyzw_study/internal/crypto/bon"
 )
@@ -19,6 +17,7 @@ const (
 )
 
 var seq int32
+var clientMSg map[int32]int32
 
 func NextSeq() int32 {
 	return atomic.AddInt32(&seq, 1)
@@ -44,6 +43,7 @@ func StartCapture(handler PacketHandler) {
 	proxy := gamemitm.NewProxy()
 	proxy.SetVerbose(false)
 	seq = 0
+	clientMSg = make(map[int32]int32)
 	proxy.OnRequest("xxz-xyzw.hortorgames.com").Do(func(body []byte, ctx *gamemitm.ProxyCtx) []byte {
 		if handler == nil {
 			return body
@@ -51,20 +51,20 @@ func StartCapture(handler PacketHandler) {
 		// 拷贝原始请求体
 		original := make([]byte, len(body))
 		copy(original, body)
-
-		// 判断前两个字节是否是 0x70 0x78（即 "px"）
 		if len(body) >= 2 && body[0] == 0x70 && body[1] == 0x78 {
-			originalStr := bon.DecodeX(body)
-			if strings.Contains(originalStr, "_sys/ack") {
-				return original
+			msg := bon.DecodeXAsMap(body)
+			var processed []byte
+			if msg["cmd"].(string) == "_sys/ack" {
+				processed = bon.EncodeReplaceAck(original, seq+1)
+			} else {
+				processed = bon.EncodeReplaceSeq(original, NextSeq())
+				clientMSg[CurrentSeq()] = msg["seq"].(int32)
 			}
-
-			processed := bon.EncodeReplaceSeq(original, NextSeq())
 			// 给 DecodeX 使用一份拷贝，避免修改原 processed
 			decodedInput := make([]byte, len(processed))
 			copy(decodedInput, processed)
-			handler(GamePacket{processed, bon.DecodeX(decodedInput), Send, ctx.WSSession})
-
+			updateStr := bon.DecodeX(decodedInput)
+			handler(GamePacket{processed, updateStr, Send, ctx.WSSession})
 			return processed
 		}
 		return original
@@ -73,14 +73,35 @@ func StartCapture(handler PacketHandler) {
 		if handler == nil {
 			return body
 		}
-		result := make([]byte, len(body))
-		copy(result, body)
-		hexStr := hex.EncodeToString(body)
-		if strings.HasPrefix(hexStr, "7078") {
+		// 拷贝原始请求体
+		original := make([]byte, len(body))
+		copy(original, body)
+		if len(body) >= 2 && body[0] == 0x70 && body[1] == 0x78 {
 
-			handler(GamePacket{result, bon.DecodeX(body), Receive, ctx.WSSession})
+			msg := bon.DecodeXAsMap(body)
+			var processed []byte
+			if msg["cmd"].(string) == "_sys/ack" {
+				processed = bon.EncodeReplaceAck(original, CurrentSeq())
+			} else {
+				if msg["resp"] != nil {
+					if rseq, ok := clientMSg[msg["resp"].(int32)]; ok {
+						processed = bon.EncodeReplaceResp(original, rseq)
+					} else {
+						processed = original
+					}
+				} else {
+					processed = original
+				}
+
+			}
+			decodedInput := make([]byte, len(processed))
+			copy(decodedInput, processed)
+			// 给 DecodeX 使用一份拷贝，避免修改原 processed
+			updateStr := bon.DecodeX(decodedInput)
+			handler(GamePacket{processed, updateStr, Receive, ctx.WSSession})
+			return processed
 		}
-		return result
+		return original
 	})
 	proxy.Start()
 }

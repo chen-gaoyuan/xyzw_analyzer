@@ -77,6 +77,12 @@ A: 在脚本管理界面点击"新建脚本"，输入脚本名称和内容，然
 A: 理论上支持所有使用HTTP/HTTPS或WebSocket协议通信的网络游戏。
 
 ## 更新日志
+## v1.0.5
+fix 自定义消息后游戏无响应的bug
+✨ feat(bon): 添加 EncodeReplaceResp 和 EncodeReplaceAck 方法  
+✨ feat(bon): 新增 DecodeXAsMap 方法  
+🐛 fix(proxy): 优化消息处理逻辑，支持 ack 和 resp 替换  
+🔧 chore(handlers): 增加调试日志输出
 
 ### v1.0.0 (2025-03-16)
 - 首次发布
