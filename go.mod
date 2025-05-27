@@ -1,6 +1,6 @@
 module xyzw_study
 
-go 1.23.6
+go 1.23
 
 require (
 	github.com/husanpao/game-mitm v0.0.0-20250310071321-f2c191024c8a
