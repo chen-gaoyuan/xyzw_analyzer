@@ -1,28 +1,39 @@
-name: Go Build and Release Windows EXE
+name: Go Build and Upload EXE on Push
 
 on:
   push:
-    tags:
-      - 'v*'  # 只有 push v1.0.0 这样的 tag 才会触发
+    branches:
+      - master
+  workflow_dispatch:  # 添加这一行，支持手动触发
 
 jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout code
+        uses: actions/checkout@v4
 
       - name: Set up Go
         uses: actions/setup-go@v4
         with:
           go-version: '1.20'
 
-      - name: Build Windows exe
+      - name: Build Windows EXE
         run: |
-          GOOS=windows GOARCH=amd64 go build -o xyzw_analyzer.exe ./xyzw_study/cmd/xyzw
+          mkdir -p build
+          GOOS=windows GOARCH=amd64 go build -o build/xyzw.exe ./xyzw_study/cmd/xyzw
 
-      - name: Upload Release Asset
+      - name: Create zip package
+        run: |
+          cd build
+          zip xyzw_windows.zip xyzw.exe
+
+      - name: Upload to "latest" Release
         uses: softprops/action-gh-release@v2
         with:
-          files: main.exe
+          tag_name: latest
+          files: build/xyzw_windows.zip
+          make_latest: true
+          fail_on_unmatched_files: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
