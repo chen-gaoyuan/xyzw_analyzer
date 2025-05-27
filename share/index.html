@@ -1,0 +1,318 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>咸鱼之王辅助分析工具 - 专业游戏协议分析</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: "Microsoft YaHei", sans-serif;
+        }
+        
+        body {
+            background-color: #f5f7fa;
+            color: #333;
+            line-height: 1.6;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        header {
+            background: linear-gradient(135deg, #4CAF50, #2196F3);
+            color: white;
+            padding: 30px 0;
+            text-align: center;
+            border-radius: 10px;
+            margin-bottom: 30px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+        
+        h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+        }
+        
+        .subtitle {
+            font-size: 1.2rem;
+            opacity: 0.9;
+        }
+        
+        .features {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 30px;
+            margin-bottom: 40px;
+        }
+        
+        .feature-card {
+            background-color: white;
+            border-radius: 10px;
+            padding: 25px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.05);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+        
+        .feature-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
+        }
+        
+        .feature-icon {
+            font-size: 2.5rem;
+            margin-bottom: 15px;
+            color: #4CAF50;
+        }
+        
+        .feature-title {
+            font-size: 1.4rem;
+            margin-bottom: 10px;
+            color: #333;
+        }
+        
+        .screenshots {
+            margin-bottom: 40px;
+        }
+        
+        .screenshot-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(500px, 1fr));
+            gap: 20px;
+            margin-top: 20px;
+        }
+        
+        .screenshot {
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+        
+        .screenshot img {
+            width: 100%;
+            height: auto;
+            display: block;
+            transition: transform 0.3s ease;
+        }
+        
+        .screenshot:hover img {
+            transform: scale(1.02);
+        }
+        
+        .section-title {
+            font-size: 2rem;
+            margin-bottom: 20px;
+            text-align: center;
+            position: relative;
+            padding-bottom: 10px;
+        }
+        
+        .section-title:after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 80px;
+            height: 3px;
+            background: linear-gradient(to right, #4CAF50, #2196F3);
+        }
+        
+        .cta {
+            background: linear-gradient(135deg, #2196F3, #4CAF50);
+            text-align: center;
+            padding: 50px 20px;
+            border-radius: 10px;
+            color: white;
+            margin-bottom: 40px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+        
+        .cta h2 {
+            font-size: 2rem;
+            margin-bottom: 20px;
+        }
+        
+        .cta-button {
+            display: inline-block;
+            background-color: white;
+            color: #2196F3;
+            padding: 12px 30px;
+            border-radius: 30px;
+            font-size: 1.1rem;
+            font-weight: bold;
+            text-decoration: none;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+        
+        .cta-button:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
+        }
+        
+        footer {
+            text-align: center;
+            padding: 20px;
+            color: #666;
+            font-size: 0.9rem;
+        }
+        
+        .highlight {
+            color: #4CAF50;
+            font-weight: bold;
+        }
+        
+        .code-preview {
+            background-color: #1e1e1e;
+            color: #d4d4d4;
+            padding: 20px;
+            border-radius: 10px;
+            overflow: auto;
+            font-family: Consolas, Monaco, 'Andale Mono', monospace;
+            margin: 20px 0;
+            line-height: 1.5;
+        }
+        
+        .code-preview pre {
+            margin: 0;
+        }
+        
+        .keyword {
+            color: #569cd6;
+        }
+        
+        .string {
+            color: #ce9178;
+        }
+        
+        .comment {
+            color: #6a9955;
+        }
+        
+        .function {
+            color: #dcdcaa;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>咸鱼之王辅助分析工具</h1>
+            <p class="subtitle">专业的游戏全协议分析系统，助您掌握游戏通信数据</p>
+        </header>
+        
+        <section class="features">
+            <div class="feature-card">
+                <div class="feature-icon">📊</div>
+                <h3 class="feature-title">全协议实时监控</h3>
+                <p>实时捕获并分析游戏中的所有网络协议，全面掌握游戏数据流动。</p>
+            </div>
+            
+            <div class="feature-card">
+                <div class="feature-icon">🔍</div>
+                <h3 class="feature-title">详细数据解析</h3>
+                <p>自动解析JSON格式的游戏协议，展示完整的数据结构和内容。</p>
+            </div>
+            
+            <div class="feature-card">
+                <div class="feature-icon">💾</div>
+                <h3 class="feature-title">脚本管理系统</h3>
+                <p>支持创建、编辑和管理多个分析脚本，满足不同协议分析的需求。</p>
+            </div>
+            
+            <div class="feature-card">
+                <div class="feature-icon">📝</div>
+                <h3 class="feature-title">协议备注功能</h3>
+                <p>为每个协议添加自定义备注，方便后续查阅和分析。</p>
+            </div>
+            
+            <div class="feature-card">
+                <div class="feature-icon">📱</div>
+                <h3 class="feature-title">数据结构识别</h3>
+                <p>自动识别并显示协议中的关键数据结构和字段，提高分析效率。</p>
+            </div>
+            
+            <div class="feature-card">
+                <div class="feature-icon">⚙️</div>
+                <h3 class="feature-title">自定义过滤器</h3>
+                <p>根据需求筛选特定类型的协议，快速定位关键数据。</p>
+            </div>
+        </section>
+        
+        <section class="screenshots">
+            <h2 class="section-title">功能界面展示</h2>
+            <div class="screenshot-container">
+                <div class="screenshot">
+                    <img src="images/screenshot1.png" alt="消息分析界面">
+                </div>
+                <div class="screenshot">
+                    <img src="images/screenshot2.png" alt="JSON数据展示">
+                </div>
+                <div class="screenshot">
+                    <img src="images/screenshot3.png" alt="脚本管理界面">
+                </div>
+                <div class="screenshot">
+                    <img src="images/screenshot4.png" alt="命令备注功能">
+                </div>
+            </div>
+        </section>
+        
+        <section class="code-example">
+            <h2 class="section-title">强大的脚本功能</h2>
+            <p style="text-align: center; margin-bottom: 20px;">内置智能脚本系统，轻松处理各类游戏协议</p>
+            
+            <div class="code-preview">
+                <pre><span class="comment">// 这是一个示例脚本</span>
+<span class="comment">// 处理游戏协议，将其内容作为参数</span>
+<span class="keyword">function</span> <span class="function">processMessageData</span>(messageData) {
+    <span class="comment">// 获取协议内容</span>
+    <span class="keyword">const</span> cmd = messageData.cmd;
+    <span class="keyword">if</span> (cmd === <span class="string">"System_NewChatMessageNotify"</span>) {
+        <span class="function">log</span>(<span class="string">"检测到聊天协议"</span>);
+        <span class="keyword">return</span>
+    }
+    
+    <span class="function">log</span>(<span class="string">"游戏协议: "</span> + cmd, <span class="string">"warning"</span>);
+}</pre>
+            </div>
+        </section>
+        
+        <section class="cta">
+            <h2>立即体验咸鱼之王辅助分析工具</h2>
+            <p style="margin-bottom: 30px;">全面掌握游戏协议数据，提升您的游戏分析能力</p>
+            <a href="#download" class="cta-button">立即下载</a>
+        </section>
+        
+        <section>
+            <h2 class="section-title">核心优势</h2>
+            <div class="features">
+                <div class="feature-card">
+                    <h3 class="feature-title">全面协议分析</h3>
+                    <p>针对游戏中所有网络协议进行专业解析，展示完整JSON结构。</p>
+                </div>
+                
+                <div class="feature-card">
+                    <h3 class="feature-title">多脚本管理</h3>
+                    <p>支持创建多个脚本版本，如图中的"测试"、"新脚本"、"测试2"等，满足不同分析场景需求。</p>
+                </div>
+                
+                <div class="feature-card">
+                    <h3 class="feature-title">用户友好界面</h3>
+                    <p>清晰的协议列表、详细的JSON展示、便捷的脚本管理，让协议分析变得简单。</p>
+                </div>
+            </div>
+        </section>
+        
+        <footer>
+            <p>© 2023 咸鱼之王辅助分析工具 版权所有</p>
+            <p>专注于游戏协议分析，提供最专业的辅助工具</p>
+        </footer>
+    </div>
+</body>
+</html>
