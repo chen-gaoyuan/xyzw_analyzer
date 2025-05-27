@@ -6,6 +6,9 @@ on:
       - master
   workflow_dispatch:  # 支持手动触发
 
+permissions:
+  contents: write  # 必须显式声明，才允许创建 Release
+
 jobs:
   build:
     runs-on: ubuntu-latest
