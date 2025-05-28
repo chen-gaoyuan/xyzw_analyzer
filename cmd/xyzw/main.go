@@ -21,7 +21,7 @@ import (
 )
 
 // 当前应用版本
-const appVersion = "v1.0.8" // 请根据实际情况修改
+const appVersion = "v1.0.9" // 请根据实际情况修改
 
 // Release 结构体用于解析GitHub API返回的release信息
 type Release struct {

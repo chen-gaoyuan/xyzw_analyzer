@@ -53,6 +53,13 @@ func StartCapture(handler PacketHandler) {
 		copy(original, body)
 		if len(body) >= 2 && body[0] == 0x70 && body[1] == 0x78 {
 			msg := bon.DecodeXAsMap(body)
+			if msg["seq"] != nil {
+				gameSeq := msg["seq"].(int32)
+				if gameSeq == 1 {
+					seq = 0
+				}
+			}
+
 			var processed []byte
 			if msg["cmd"] == nil {
 				return original
