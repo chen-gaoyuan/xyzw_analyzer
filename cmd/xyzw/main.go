@@ -56,6 +56,7 @@ func showDisclaimer() {
 	green.Println("项目信息:")
 	green.Println("- 项目地址: https://github.com/husanpao/xyzw_analyzer")
 	green.Println("- 问题反馈: 请在GitHub项目页面提交issue")
+	yellow.Println("- QQ群: 211788130")
 
 	cyan.Println("=================================================================")
 	fmt.Println()
