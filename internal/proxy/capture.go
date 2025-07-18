@@ -4,6 +4,8 @@ import (
 	gamemitm "github.com/husanpao/game-mitm"
 	"sync/atomic"
 	"xyzw_study/internal/crypto/bon"
+	"log"
+	"os"
 )
 
 // Direction 定义数据包方向
@@ -40,6 +42,16 @@ type PacketHandler func(packet GamePacket)
 
 // StartCapture 开始捕获游戏数据包
 func StartCapture(handler PacketHandler) {
+	// 创建或打开日志文件
+	file, err := os.OpenFile("app.log", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer file.Close()
+
+	// 设置日志输出到文件
+	log.SetOutput(file)
+
 	proxy := gamemitm.NewProxy()
 	proxy.SetVerbose(false)
 	seq = 0
@@ -74,6 +86,8 @@ func StartCapture(handler PacketHandler) {
 			decodedInput := make([]byte, len(processed))
 			copy(decodedInput, processed)
 			updateStr := bon.DecodeX(decodedInput)
+			log.Printf("Send => %s", updateStr)
+
 			handler(GamePacket{processed, updateStr, Send, ctx.WSSession})
 			return processed
 		}
@@ -111,6 +125,7 @@ func StartCapture(handler PacketHandler) {
 			copy(decodedInput, processed)
 			// 给 DecodeX 使用一份拷贝，避免修改原 processed
 			updateStr := bon.DecodeX(decodedInput)
+			log.Printf("Recv <= %s", updateStr)
 			handler(GamePacket{processed, updateStr, Receive, ctx.WSSession})
 			return processed
 		}
