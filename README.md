@@ -1,83 +1,50 @@
-# 咸鱼之王辅助分析工具
+(e.Legion_GetSkyHorseLegionInfo =
+"legion_getskyhorselegioninfo"), // 获得俱乐部信息
 
-![咸鱼之王辅助分析工具](share/images/screenshot1.png)
+(e.SkyHorse_BuySignUpItem = "skyhorse_buysignupitem"), // 购买道具
+{ num: e }
 
-## 📜 免责声明
+(e.SkyHorse_LegionSignup = "skyhorse_legionsignup"), // 俱乐部报名
+{}
 
-本项目仅为**技术研究与学习交流**目的而开发，所有功能均基于对游戏协议的分析与探索。使用者应遵守以下原则：
-1. **合法合规**：禁止用于任何商业用途或游戏作弊行为；
-2. **自我责任**：使用本工具产生的任何风险由使用者自行承担；
-3. **尊重版权**：不得利用本项目侵犯游戏厂商合法权益。
+(e.SkyHorse_ChooseBuff = "skyhorse_choosebuff"), // 选择 buf
+{
+chooseBuffId: e,
+chooseBuffIndex: e,
+}
 
+(e.SkyHorse_ChooseLegion = "skyhorse_chooselegion"),// 选择打哪个俱乐部 没用了
 
+(e.SkyHorse_FightPVE = "skyhorse_fightpve"), // 打马
+{}
 
-## 📝 LICENSE
-本项目采用 **GNU Affero General Public License v3.0 (AGPLv3)** 开源协议，核心条款包括：
-- **自由使用**：允许研究、修改和分发代码；
-- **传染性开源**：任何基于本项目的衍生作品必须**公开源代码**并采用相同协议；
-- **禁止商业滥用**：不得直接用于盈利性活动（如外挂售卖）；
-- **免责条款**：作者不承担用户滥用导致的任何法律责任。
+(e.SkyHorse_FightPVP = "skyhorse_fightpvp"), // 打人
+{ targetId: e }
 
-完整协议文本见 [LICENSE](LICENSE) 文件，使用即代表您同意遵守该协议。
+(e.SkyHorse_GetBattleRecord = "skyhorse_getbattlerecord"), // 获得战斗记录?
+{}
 
-## 🎯 项目简介
+(e.SkyHorse_GetLegionHorseBattle = "skyhorse_getlegionhorsebattle"),
+{}
 
-一款专注于游戏协议逆向分析的学术研究工具，通过实时捕获和解析网络通信数据，帮助开发者：
-- 研究游戏通信机制
-- 学习协议逆向工程技术
-- 探索数据安全防护方案
+(e.SkyHorse_GetLegionInfo = "skyhorse_getlegioninfo"), // 俱乐部信息
+{}
 
-## 🔍 主要功能
+(e.SkyHorse_GetLegionRank = "skyhorse_getlegionrank"), // 获得俱乐部排行榜
+{}
 
-### 全协议实时监控
-- 实时捕获并分析游戏中的所有网络协议
-- 全面掌握游戏数据流动情况
+(e.SkyHorse_GetRoleRank = "skyhorse_getrolerank"), // 获得个人排行榜
+{}
 
-### 详细数据解析
-- 自动解析JSON格式的游戏协议
-- 展示完整的数据结构和内容
+(e.SkyHorse_GetRoleHorseRecord = "skyhorse_getrolehorserecord"), // 获得天马记录?
+{ recordType: e }
 
-### 脚本管理系统
-- 支持创建、编辑和管理多个分析脚本
-- 满足不同协议分析的需求
+(e.SkyHorse_PickAward = "skyhorse_pickaward"), // 打图鉴马?
+{
+legionId: i,
+monsterUId: e,
+index: t,
+}
 
-### 协议备注功能
-- 为每个协议添加自定义备注
-- 方便后续查阅和分析
-
-### 数据结构识别
-- 自动识别并显示协议中的关键数据结构和字段
-- 提高分析效率
-
-### 自定义过滤器
-- 根据需求筛选特定类型的协议
-- 快速定位关键数据
-
-## 📌 更新日志
-### v1.0.5
-- 🐛 修复自定义消息后游戏无响应的bug
-- ✨ 新增 `EncodeReplaceResp` 和 `EncodeReplaceAck` 方法
-- ✨ 新增 `DecodeXAsMap` 方法
-- 🐛 优化消息处理逻辑，支持 ack 和 resp 替换
-- 🔧 增加调试日志输出
-
-### v1.0.3
-- 新增离线测试客户端（仅供协议分析验证使用）
-- 下载地址：`https://zpoke.lanzouq.com/b011lbp6re` 密码: `81kf`
-
-### v1.0.0
-- 首次发布
-- 基础协议捕获与分析功能
-- 脚本管理系统上线
-
-## 🌐 学术交流
-
-我们欢迎**安全研究人员**和**协议分析爱好者**共同探讨：
-- 游戏协议加密技术
-- 数据安全防护方案
-- 逆向工程方法论
-
-📫 联系方式：
-- **邮箱**: ndk@live.com（仅限学术交流）
-- **QQ群**: [点击链接加入群聊【协议分析交流】](https://qm.qq.com/q/n7W49SEiNq)
-- **GitHub Issues**: [提交技术讨论](https://github.com/husanpao/xyzw_analyzer/issues)
+(e.SkyHorse_SupplyEnergy = "skyhorse_supplyenergy"), // 恢复精力?
+{}
