@@ -9,6 +9,8 @@ github.com/gorilla/websocket v1.5.3 h1:saDtZ6Pbx/0u+bgYQ3q96pZgCzfhKXGPqt7kZ72aN
 github.com/gorilla/websocket v1.5.3/go.mod h1:YR8l580nyteQvAITg2hZ9XVh4b55+EU/adAjf1fMHhE=
 github.com/husanpao/game-mitm v0.0.0-20250310071321-f2c191024c8a h1:V7UtEikHkur4vtecZDHp2UgqBwhOQyH0LsEpLRjSyjk=
 github.com/husanpao/game-mitm v0.0.0-20250310071321-f2c191024c8a/go.mod h1:I9GGTA+SGqrMmDdfIY2Hksbs0f/mDEcSyCdnCz+KzHs=
+github.com/husanpao/game-mitm v0.0.0-20250722024031-59468afa8db2 h1:deMBItcA7ecR5cjc3USEJP2dOoPZTc77Rw3vCjusx34=
+github.com/husanpao/game-mitm v0.0.0-20250722024031-59468afa8db2/go.mod h1:I9GGTA+SGqrMmDdfIY2Hksbs0f/mDEcSyCdnCz+KzHs=
 github.com/kr/pretty v0.3.1 h1:flRD4NNwYAUpkphVc1HcthR4KEIFJ65n8Mw5qdRn3LE=
 github.com/kr/pretty v0.3.1/go.mod h1:hoEshYVHaxMs3cyo3Yncou5ZscifuDolrwPKZanG3xk=
 github.com/kr/text v0.2.0 h1:5Nx0Ya0ZqY2ygV366QzturHI13Jq95ApcVaJBhpS+AY=

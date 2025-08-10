@@ -26,4 +26,4 @@ go.work
 # Project specific
 ca/
 
-app.log
+*.log
